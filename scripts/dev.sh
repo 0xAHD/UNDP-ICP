@@ -4,7 +4,7 @@
 #   ./scripts/dev.sh reset    wipe local state, fresh install (schema changes)
 #   ./scripts/dev.sh seed     bootstrap admins up to the floor
 #   ./scripts/dev.sh up       upgrade in place, keeping state (compatible changes)
-#   ./scripts/dev.sh test     reset, adversarial suites, then the credential flow
+#   ./scripts/dev.sh test     reset, adversarial suites, credential flow, page suite
 #   ./scripts/dev.sh status   canister IDs, schema versions, admin counts
 #   ./scripts/dev.sh down     stop the local network
 #
@@ -129,6 +129,10 @@ cmd_test() {
   # credential flow can run straight after without re-seeding.
   hr; echo "==> CREDENTIAL FLOW (end-to-end, real Ed25519)"
   node ./scripts/credential-flow-test.mjs || fail=1
+  # The page is the product surface — a break there matters as much as a
+  # canister break, so it is part of the gate rather than a manual check.
+  hr; echo "==> VERIFICATION PAGE (real browser)"
+  node ./scripts/page-test.mjs || fail=1
   hr
   [[ $fail -eq 0 ]] && echo "ALL SUITES PASSED" || { echo "SUITE FAILURES"; return 1; }
 }

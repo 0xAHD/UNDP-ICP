@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# Cancel superseded runs on the same branch — the gate takes minutes and only
+# the newest commit matters.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DO_NOT_TRACK: "1"
+
+jobs:
+  # Fast feedback: types, lint, upgrade-compatibility and the Candid contract.
+  # No replica needed, so this fails in ~1 minute when something is obviously
+  # wrong rather than after a full deploy.
+  check:
+    name: check + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install toolchain
+        run: npm install -g @icp-sdk/icp-cli @icp-sdk/ic-wasm ic-mops
+
+      - name: Install Motoko deps
+        run: mops install
+
+      # Includes check-stable against deployed/*.most, so an upgrade-breaking
+      # change to the stable shape fails here instead of on a live canister.
+      - name: mops check
+        run: mops check
+
+      - name: mops build
+        run: mops build
+
+      # The committed .did files are the contract the verification page and any
+      # other client build against. If regenerating them produces a diff, the
+      # contract moved without being reviewed.
+      - name: Candid is up to date
+        run: |
+          mops generate candid
+          if ! git diff --quiet -- 'src/**/*.did'; then
+            echo "::error::Committed Candid is stale. Run 'mops generate candid' and review the diff."
+            git --no-pager diff -- 'src/**/*.did'
+            exit 1
+          fi
+
+  # The real gate: a local replica, both canisters, the credential flow with a
+  # real Ed25519 key, and the verification page in a real browser.
+  integration:
+    name: local replica gate
+    runs-on: ubuntu-latest
+    needs: check
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install toolchain
+        run: npm install -g @icp-sdk/icp-cli @icp-sdk/ic-wasm ic-mops
+
+      - name: Install deps
+        run: |
+          mops install
+          npm ci || npm install
+          npm --prefix verify-page ci || npm --prefix verify-page install
+
+      # page-test.mjs falls back to playwright's own Chromium when no
+      # pre-staged binary is present, which is the case on a runner.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Runs reset -> adversarial suites -> credential flow -> page suite.
+      - name: Full gate
+        run: ./scripts/dev.sh test
+
+      - name: Stop the local network
+        if: always()
+        run: ./scripts/dev.sh down || true

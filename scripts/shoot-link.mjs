@@ -1,5 +1,9 @@
 // Open a credential LINK and capture what a verifier sees, with no interaction.
 import { chromium } from "playwright";
+import fsx from "node:fs";
+
+const preferred = process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium";
+const chromiumPath = fsx.existsSync(preferred) ? preferred : null;
 import fs from "node:fs";
 const [url, label, selArg] = process.argv.slice(2);
 // Default waits for a verdict; pass a selector to capture other states.
@@ -7,7 +11,9 @@ const sel = selArg ?? "#result .verdict";
 if (!url) { console.error("usage: <credentialLink> [label]"); process.exit(2); }
 fs.mkdirSync("/tmp/shots", { recursive: true });
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium",
+  // Use a pre-staged Chromium when one exists (this image ships one); fall
+  // back to playwright's own download, which is what a CI runner will have.
+  ...(chromiumPath ? { executablePath: chromiumPath } : {}),
   args: ["--no-sandbox"],
 });
 const page = await browser.newPage({ viewport: { width: 860, height: 900 }, deviceScaleFactor: 2 });

@@ -271,7 +271,15 @@ assumptions in `phase2-decisions` remain untested because that document is
 still missing.
 
 `./scripts/dev.sh test` runs reset + the governance suites on both canisters
-(34 cases each) + the end-to-end credential flow (28 cases) — **96 in total**.
+(34 each) + the end-to-end credential flow (28) + the verification page in a
+real browser (14) — **110 in total**. The page is in the gate deliberately: it
+is the product surface, so a break there matters as much as a canister break.
+
+**CI** (`.github/workflows/ci.yml`) runs the same thing on every push: a fast
+`check` job (mops check/build + a Candid-staleness check that fails if source
+drifted from the committed `.did`), then the full replica gate. The browser
+scripts fall back to playwright's own Chromium when no pre-staged binary
+exists, so they work on a runner and in a sandbox alike.
 Pre-live, `reset` also re-promotes the `deployed/*.most` baseline;
 after go-live the baseline must only ever be promoted after a real deploy.
 

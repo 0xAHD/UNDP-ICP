@@ -1,6 +1,10 @@
 // Drive the deployed verification page in a real browser and capture each
 // verdict. Proves the page works end to end against the local replica.
 import { chromium } from "playwright";
+import fsx from "node:fs";
+
+const preferred = process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium";
+const chromiumPath = fsx.existsSync(preferred) ? preferred : null;
 import fs from "node:fs";
 import path from "node:path";
 
@@ -16,7 +20,9 @@ const outDir = "/tmp/shots"; fs.mkdirSync(outDir, { recursive: true });
 // different one. Use the image's binary rather than downloading (see the
 // environment's PLAYWRIGHT_BROWSERS_PATH note).
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH ?? "/opt/pw-browsers/chromium",
+  // Use a pre-staged Chromium when one exists (this image ships one); fall
+  // back to playwright's own download, which is what a CI runner will have.
+  ...(chromiumPath ? { executablePath: chromiumPath } : {}),
   args: ["--no-sandbox"],
 });
 const page = await browser.newPage({ viewport: { width: 860, height: 1100 }, deviceScaleFactor: 2 });
