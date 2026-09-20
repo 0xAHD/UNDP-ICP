@@ -89,10 +89,13 @@ MATCHES CLAIM   : true
 not answer the programme-level questions a Phase 1 normally settles, and none of
 these can be answered from this repo:
 
-1. **The credential document format.** What a holder actually receives, and
-   exactly which bytes are hashed to produce the on-chain digest. Without a
-   canonical serialisation, two verifiers can hash the same document differently
-   and disagree.
+1. ~~**The credential document format.**~~ **DEFINED 2026-09-20** —
+   `shared-js/credential.mjs` is the single source of truth, used by both the
+   issuer and the verification page so they cannot drift. Compact JSON, keys in
+   a fixed `FIELD_ORDER`, no whitespace, UTF-8, SHA-256. Unknown fields are
+   refused rather than silently dropped (a dropped field would not be covered by
+   the digest). **[PROPOSED]** — still needs sign-off, and must be reconciled if
+   GBA prescribes a format.
 2. **Who the issuers are** in practice, and how their keys are held.
 3. **The revocation policy** — who may revoke, on what grounds, and what a
    verifier should show when they see a revoked credential.

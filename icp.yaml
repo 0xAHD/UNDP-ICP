@@ -14,6 +14,19 @@ canisters:
     recipe:
       type: "@dfinity/motoko@v5.1.0"
 
+  # Public credential verification page. Served by the certified-assets
+  # canister, which sets the `ic_env` cookie carrying the root key and canister
+  # ids — so the page never calls fetchRootKey() and needs no environment
+  # branching (canister-security pitfall 7).
+  - name: verify_page
+    recipe:
+      type: "@dfinity/static-site@v0.3.3"
+      configuration:
+        dir: verify-page/dist
+        build:
+          - npm --prefix verify-page install
+          - npm --prefix verify-page run build
+
 networks:
   - name: local
     mode: managed
@@ -21,4 +34,4 @@ networks:
 environments:
   - name: local
     network: local
-    canisters: [ops, registry]
+    canisters: [ops, registry, verify_page]

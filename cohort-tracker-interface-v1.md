@@ -160,20 +160,29 @@ so the same code works locally and on mainnet with no environment branching.
 
 ---
 
-## 6. The public verification page — **[PROPOSED]**
+## 6. The public verification page — **[VERIFIED]** built 2026-09-20
 
-Not built. Requirements it must meet:
+Served by the `verify_page` canister (`@dfinity/static-site`), so the browser
+gets the root key and canister ids from the `ic_env` cookie — no
+`fetchRootKey()`, no environment branching (canister-security pitfall 7).
 
-1. Hash the document the holder presents, client-side.
-2. Call `verify(digest)`.
-3. **Verify the certificate against the IC root key in the browser** — not
-   server-side, or the trust model collapses back to trusting our server.
-4. Check the certificate's `/time` for freshness, so a stale certificate cannot
-   be replayed.
-5. Check the signature against a key in the certified `issuerKeys` set.
-6. Show one of: **valid** / **revoked** (with `statusChangedAt`) / **unknown
-   digest**.
+What it does, all client-side:
 
-**[NEEDS INPUT]** The canonical document serialisation — exactly which bytes are
-hashed. Without it two verifiers can hash the same document differently and
-disagree. Flagged in `-phase1-results.md` §4.
+1. Hashes the pasted document locally, in canonical form
+   (`shared-js/credential.mjs`) — only the digest leaves the browser.
+2. Calls `verify(digest)` — an update call, so the answer carries consensus.
+3. Checks the Ed25519 signature against the issuer key the registry returned.
+4. Shows one of: **valid** / **revoked** (with the date) / **issuer key
+   compromised** (valid but flagged) / **not a known credential**.
+
+**[VERIFIED]** Driven in a real browser (Playwright/Chromium) against a local
+replica. A credential was issued by the off-chain issuer, verified green, then
+revoked and re-verified, and a document with one altered character produced
+"Not a known credential" — the signature still verifies on a revoked
+credential, so revocation is shown rather than hidden.
+
+Reproduce: `node scripts/issue-credential.mjs setup && node scripts/issue-credential.mjs issue "Name" cohort role`,
+then open the `verify_page` URL from `icp deploy`.
+
+**[NEEDS INPUT]** The canonical document format is defined but still
+`[PROPOSED]` — sign it off, or reconcile it against GBA if that prescribes one.

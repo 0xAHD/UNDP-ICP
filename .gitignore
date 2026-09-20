@@ -3,8 +3,17 @@
 # and for `registry` that ID is the permanent credential DID.
 .icp/cache/
 
+# node deps (root is only for dev tooling like playwright)
+node_modules/
+
 # mops: downloaded packages and build output
 .mops/
 
 # Motoko build artifacts
 *.wasm
+
+# issuer private key and issued credential documents — never commit
+.issuer-key.json
+credentials/
+verify-page/node_modules/
+verify-page/dist/

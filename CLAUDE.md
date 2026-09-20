@@ -255,6 +255,9 @@ output**. Never claim a build or test passed without having run it this session.
 - `canister-security` review — **done 2026-09-20, see §11**
 - upgrade/migration test (state survives; the chain does not re-run)
 - Candid diff against the committed `src/*/**.did`
+- the verification page driven in a real browser against the local replica
+  (`scripts/shoot-verify-page.mjs`) — **done 2026-09-20**: valid, revoked and
+  tampered verdicts all confirmed
 
 Spike results that change the gate (`spikes/FINDINGS.md`): the certified-query
 path verifies end to end locally, and **certified data survives a canister
@@ -285,6 +288,11 @@ src/<canister>/
   mixins/              public endpoints (registry adds Issuance.mo, Verify.mo)
   main.mo              composition root — NO public methods
   migrations/          YYYYMMDD_HHMMSS.mo, mops-managed chain
+
+shared-js/             canonical credential format — ONE source of truth for
+                       the issuer and the page, so they cannot drift
+verify-page/           public verification page (static-site canister)
+scripts/               dev loop, adversarial suite, issuer tool, page driver
 ```
 
 Rules that bite:
