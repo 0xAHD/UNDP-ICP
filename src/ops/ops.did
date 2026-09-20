@@ -28,4 +28,7 @@ service : {
   listAdmins: () -> (vec principal) query;
   /// Remove an admin, never dropping below the configured admin floor.
   removeAdmin: (who: principal) -> (Result);
+  /// Schema version, set by the migration chain in `migrations/`.
+  /// Bump it in the migration whenever the stable shape changes.
+  schemaVersion: () -> (nat) query;
 }

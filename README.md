@@ -45,7 +45,25 @@ mops build          # wasm + candid
 mops generate candid  # refresh src/<name>/<name>.did, then diff before commit
 ```
 
-## Local replica
+## Iterating
+
+One entry point for the whole local loop:
+
+```bash
+./scripts/dev.sh reset    # wipe state, fresh install  <- after ANY stable-shape change
+./scripts/dev.sh seed     # bootstrap admins to the floor
+./scripts/dev.sh up       # upgrade in place, keeping state (compatible changes)
+./scripts/dev.sh test     # reset + adversarial suite on both canisters
+./scripts/dev.sh status   # canister IDs, schema versions, admin counts
+./scripts/dev.sh down     # stop the network
+```
+
+`up` refuses stable-incompatible changes and tells you to `reset` — that is the
+guard rail working. While pre-live, fold schema changes into the single
+migration file and `reset`; at go-live that file freezes and changes become
+append-only. See CLAUDE.md §5 for what freezes and the go-live checklist.
+
+## Local replica (manual)
 
 ```bash
 icp network start -d
@@ -69,14 +87,15 @@ Requires a running local network and a **fresh deploy** (empty admin set); the
 sequence is order-dependent.
 
 ```bash
-./scripts/local-adversarial-test.sh registry
-./scripts/local-adversarial-test.sh ops
+./scripts/dev.sh test                          # both canisters, with reset
+./scripts/local-adversarial-test.sh registry   # or one at a time
 ```
 
 Covers: anonymous caller rejection on every mutating method, controller-only
 bootstrap, bootstrap closing permanently at the floor, non-admin rejection,
 duplicate admission, the admin floor holding under removal, and unknown-principal
-removal. Issuance / revocation / tamper cases arrive with Phase 2.
+removal, and schema introspection. 29 cases per canister. Issuance /
+revocation / tamper cases arrive with Phase 2.
 
 ## Sandbox workarounds
 

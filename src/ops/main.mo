@@ -1,6 +1,7 @@
 import Set "mo:core/Set";
 import Principal "mo:core/Principal";
 import AdminApi "mixins/Admin";
+import MetaApi "mixins/Meta";
 
 /// UNDP AltFinLab Cohort Tracker — `ops` canister.
 ///
@@ -16,5 +17,11 @@ persistent actor {
   /// Principals permitted to administer ops.
   let admins : Set.Set<Principal>;
 
+  /// Stable-shape version, supplied by the migration chain.
+  /// Named `schema` because `include` injects mixin names into this same
+  /// scope, and the Meta mixin exposes a `schemaVersion` query.
+  let schema : Nat;
+
   include AdminApi(admins);
+  include MetaApi(schema);
 };

@@ -5,7 +5,7 @@ type Internal__493296107<T> =
 type Leaf__178727986<T> = {data : Data__838833191<T>};
 type Nat__920180692 = Nat;
 type Nat__920310729 = Nat__920180692;
-type NewActor__848866106 = {admins : Set__741069794<Principal>};
+type NewActor__848866106 = {admins : Set__741069794<Principal>; schema : Nat};
 type Node__1005781198<T> =
   {#internal : Internal__493296107<T>; #leaf : Leaf__178727986<T>};
 type OldActor__938247123 = {};
@@ -17,5 +17,6 @@ type Set__741069794<T> = Set__72989423<T>;
 }
 actor  {
   stable admins :
-    {var root : Node__1005781198<Principal>; var size : Nat__920310729}
+    {var root : Node__1005781198<Principal>; var size : Nat__920310729};
+  stable schema : Nat
 };

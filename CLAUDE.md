@@ -69,7 +69,74 @@ effect**. One approval covers one action; it does not carry to the next.
 
 ---
 
-## 5. Skills protocol — mandatory
+## 5. Iterating before go-live
+
+**Everything here is changeable right now. Almost none of it is changeable
+after go-live.** Knowing which is which is the whole game.
+
+### The loop
+
+```bash
+./scripts/dev.sh reset    # wipe local state, fresh install  <- after ANY stable-shape change
+./scripts/dev.sh seed     # bootstrap admins up to the floor
+./scripts/dev.sh up       # upgrade in place, keeping state  <- compatible changes only
+./scripts/dev.sh test     # reset + full adversarial suite on both canisters
+./scripts/dev.sh status   # canister IDs, schema versions, admin counts
+./scripts/dev.sh down     # stop the local network
+```
+
+`up` refuses an incompatible change and tells you to `reset` — that refusal is
+the guard rail, not a bug. Local resets **recreate canisters and change their
+IDs**; that is free now and catastrophic after go-live (§2).
+
+### Migration chain: collapse now, stack later
+
+**Pre-live:** keep ONE migration file and fold every schema change into it.
+Bump `schema` in that file when the stable shape changes, then `reset`. A short
+chain replays faster forever and leaves nothing frozen by mistake.
+
+**At go-live:** `migrations/20260920_000000.mo` freezes permanently. From then
+on, never edit or rename it — every change gets a NEW timestamped file, at most
+one pending per build, and state must migrate rather than reset.
+
+`schemaVersion()` on each canister reports the deployed stable shape, so you can
+always tell what a running canister is on.
+
+### What freezes at go-live
+
+| Thing | Before go-live | After go-live |
+|---|---|---|
+| Canister IDs / the credential DID | free (`reset` recreates them) | **permanent** — never reinstall or delete |
+| Stable shape / migration chain | edit the one file, `reset` | append-only; migrate, never reset |
+| Candid interface | change freely | breaking changes break live verifiers |
+| Admin set | `reset` + `seed` | governed on-chain, floor enforced |
+| Controllers | single local controller is fine | **second controller required** (§4) |
+| Business constants (admin floor, later: roles, completion rules) | edit + `reset` | code change + upgrade |
+
+### Go-live checklist
+
+1. All READ FIRST documents in the repo; the gated decisions in §7 made.
+2. Phase 2 implemented and the `verify` spike resolved.
+3. Full adversarial suite green, including issuance/revocation/tamper cases.
+4. **Second controller added** before the registry is ever deployed.
+5. Migration chain reviewed — from this point it is append-only.
+6. `.icp/data/` committed immediately after the first real deploy.
+
+### One thing to push back on
+
+"Everything changeable" should **not** extend to making security parameters
+runtime-mutable after go-live. The registry's admin floor is a compile-time
+constant on purpose: if an admin could lower it to 1, the two-key requirement
+protecting the credential DID's issuance authority would be defeatable by the
+very principals it constrains. Changing it should cost a code change, a review
+and an upgrade. Same reasoning applies to issuer-key append-only-ness in Phase 2.
+
+If you want the floor adjustable, the safe shape is **raisable but never
+lowerable** — say the word and it is a small change.
+
+---
+
+## 6. Skills protocol — mandatory
 
 Pre-training on ICP/Motoko goes stale every release. **Do not rely on it.**
 
@@ -89,7 +156,7 @@ rather than recalling them (`@dfinity/motoko@v5.1.0` is current; a recalled
 
 ---
 
-## 6. Deferred work — ask, do not assume
+## 7. Deferred work — ask, do not assume
 
 Blocked on Ahmed's decisions. **Do not model or implement these:**
 
@@ -125,7 +192,7 @@ Ask for them; do not reconstruct them from memory or infer the schema.
 
 ---
 
-## 7. Engine constraint that changes the Phase 2 design
+## 8. Engine constraint that changes the Phase 2 design
 
 From the `cloud-engine-canisters` skill — **worth confirming before building
 `lib/Signer.mo`:**
@@ -141,7 +208,7 @@ Never attach cycles on an engine call (`IC0504`).
 
 ---
 
-## 8. Testing gate
+## 9. Testing gate
 
 Before anything is called deploy-ready, **actually run it and report real
 output**. Never claim a build or test passed without having run it this session.
@@ -154,12 +221,14 @@ output**. Never claim a build or test passed without having run it this session.
 - upgrade/migration test (state survives; the chain does not re-run)
 - Candid diff against the committed `src/*/**.did`
 
-`./scripts/local-adversarial-test.sh [registry|ops]` runs the governance half.
-The issuance/revocation/tamper cases arrive with Phase 2.
+`./scripts/dev.sh test` runs reset + the full governance suite on both
+canisters (29 cases each). The issuance/revocation/tamper cases arrive with
+Phase 2. Pre-live, `reset` also re-promotes the `deployed/*.most` baseline;
+after go-live the baseline must only ever be promoted after a real deploy.
 
 ---
 
-## 9. Architecture
+## 10. Architecture
 
 Per `writing-motoko`:
 
@@ -185,6 +254,9 @@ Rules that bite:
 - `mo:core` only (never `mo:base`), dot notation, no `stable` keyword, no
   `preupgrade`/`postupgrade`.
 - Access refusals are **returned** as `#err`, not trapped, so they are testable.
+- `include` injects mixin declarations into the **actor's own scope**, so a
+  stable field and a mixin method cannot share a name (`M0051`). Hence the
+  field `schema` behind the `schemaVersion()` query.
 
 ### Admin model
 
@@ -200,7 +272,7 @@ anonymous principal explicitly.
 
 ---
 
-## 10. Environment notes
+## 11. Environment notes
 
 - Toolchain: `icp` (never `dfx`), `mops`, `moc` pinned in `mops.toml`.
 - `mops.toml` depends on `core = "2.6.2"` from the mops registry. If the

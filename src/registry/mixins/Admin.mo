@@ -44,7 +44,7 @@ mixin (admins : Set.Set<Principal>) {
     admins.size();
   };
 
-  /// The floor this canister enforces.
+  /// The floor this canister enforces. Compile-time constant by design.
   public query func adminFloor() : async Nat {
     Admin.floor;
   };

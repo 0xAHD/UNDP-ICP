@@ -75,6 +75,10 @@ check "remove AT floor is refused"      ct-admin-a  "adminFloor"     removeAdmin
 check "remove unknown principal"        ct-admin-a  "unknownAdmin"   removeAdmin    "(principal \"$O\")"
 check "adminCount still 2"              ct-admin-a  "(2 : nat)"      adminCount
 
+echo "-- schema introspection --"
+check "schemaVersion is readable"        ct-admin-a  "(1 : nat)"      schemaVersion
+check "schemaVersion open to anonymous"  anonymous   "(1 : nat)"      schemaVersion
+
 echo "-- identity reflection --"
 check "admin sees callerIsAdmin true"   ct-admin-a  "(true)"         callerIsAdmin
 check "outsider callerIsAdmin false"    ct-outsider "(false)"        callerIsAdmin

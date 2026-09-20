@@ -17,7 +17,7 @@ service : {
   addAdmin: (who: principal) -> (Result);
   /// Number of principals currently holding admin rights.
   adminCount: () -> (nat) query;
-  /// The floor this canister enforces.
+  /// The floor this canister enforces. Compile-time constant by design.
   adminFloor: () -> (nat) query;
   /// Seed the admin set. Controller-only, and only until the two-admin floor
   /// is reached — after that this returns `#bootstrapClosed` forever.
@@ -29,4 +29,7 @@ service : {
   listAdmins: () -> (vec principal) query;
   /// Remove an admin, never dropping below the two-admin floor.
   removeAdmin: (who: principal) -> (Result);
+  /// Schema version, set by the migration chain in `migrations/`.
+  /// Bump it in the migration whenever the stable shape changes.
+  schemaVersion: () -> (nat) query;
 }
