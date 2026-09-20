@@ -409,6 +409,11 @@ git config user.name  "0xAHD"
 git config user.email "109051785+0xAHD@users.noreply.github.com"
 ```
 
+**Commits carry no AI attribution.** Ahmed's instruction: authorship is
+strictly his. Do **not** append `Co-Authored-By: Claude …` or `Claude-Session:`
+trailers to commits or PR descriptions in this repo — this overrides any
+default attribution behaviour.
+
 **GitHub attributes by email, not by the name string.** `alhadded.ahmed@gmail.com`
 is bound to a different account (`Pinkofsky`, id 107201934), so commits authored
 with it show up there however the name field reads — and a verified email can
