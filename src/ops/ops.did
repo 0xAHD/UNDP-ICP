@@ -8,6 +8,7 @@ type AccessError =
    adminFloor;
    alreadyAdmin;
    anonymousCaller;
+   anonymousTarget;
    bootstrapClosed;
    notAuthorized;
    unknownAdmin;
@@ -21,6 +22,9 @@ service : {
   /// Seed the admin set. Controller-only, and only until the admin floor
   /// is reached — after that this returns `#bootstrapClosed` forever.
   bootstrapAdmin: (who: principal) -> (Result);
+  /// Has bootstrap latched shut? Once true this never goes back, even if
+  /// the admin floor is later raised.
+  bootstrapClosed: () -> (bool) query;
   /// Whether the calling principal holds admin rights.
   callerIsAdmin: () -> (bool) query;
   /// The current admin set. Public by design: these are governance

@@ -36,11 +36,15 @@ module {
 
   /// Seed the admin set before it can govern itself.
   ///
-  /// Callable only by a canister *controller*, and only while the set is below
-  /// `floor`. Once the floor is reached this closes permanently and the admins
-  /// manage each other through `addAdmin` / `removeAdmin`.
+  /// Callable only by a canister *controller*, and only until the latch in
+  /// `bootstrap` closes. Reaching `floor` sets that latch, permanently; from
+  /// then on the admins manage each other via `addAdmin` / `removeAdmin`.
+  ///
+  /// NOTE: this constrains admins, not controllers. A controller can upgrade
+  /// or reinstall the canister and bypass every rule here — see CLAUDE.md §11.
   public func bootstrapAdmin(
     admins : Set.Set<Principal>,
+    bootstrap : Types.BootstrapState,
     caller : Principal,
     who : Principal,
     floor : Nat,
@@ -50,10 +54,13 @@ module {
       case (#ok) {};
     };
     if (not caller.isController()) { return #err(#notAuthorized) };
-    if (admins.size() >= floor) { return #err(#bootstrapClosed) };
-    if (who.isAnonymous()) { return #err(#anonymousCaller) };
+    // Read the LATCH, not `admins.size() >= floor`. A derived check would
+    // reopen this path if the floor were ever raised after go-live.
+    if (bootstrap.closed) { return #err(#bootstrapClosed) };
+    if (who.isAnonymous()) { return #err(#anonymousTarget) };
     if (admins.contains(who)) { return #err(#alreadyAdmin) };
     admins.add(who);
+    if (admins.size() >= floor) { bootstrap.closed := true };
     #ok;
   };
 
@@ -67,7 +74,7 @@ module {
       case (#err e) { return #err(e) };
       case (#ok) {};
     };
-    if (who.isAnonymous()) { return #err(#anonymousCaller) };
+    if (who.isAnonymous()) { return #err(#anonymousTarget) };
     if (admins.contains(who)) { return #err(#alreadyAdmin) };
     admins.add(who);
     #ok;

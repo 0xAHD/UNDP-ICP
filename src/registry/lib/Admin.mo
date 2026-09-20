@@ -2,6 +2,7 @@ import Set "mo:core/Set";
 import Principal "mo:core/Principal";
 import Result "mo:core/Result";
 import Access "../../shared/Access";
+import SharedTypes "../../shared/Types";
 import Types "../types";
 
 /// Registry admin policy.
@@ -28,10 +29,11 @@ module {
 
   public func bootstrapAdmin(
     admins : Set.Set<Principal>,
+    bootstrap : SharedTypes.BootstrapState,
     caller : Principal,
     who : Principal,
   ) : Result.Result<(), Types.AccessError> {
-    Access.bootstrapAdmin(admins, caller, who, floor);
+    Access.bootstrapAdmin(admins, bootstrap, caller, who, floor);
   };
 
   public func addAdmin(

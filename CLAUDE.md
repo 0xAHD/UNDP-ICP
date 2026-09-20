@@ -240,7 +240,7 @@ output**. Never claim a build or test passed without having run it this session.
 - `mops build` clean
 - local-replica integration incl. adversarial cases: anonymous caller,
   non-admin, duplicate issuance, revoked, tampered, unknown digest
-- `canister-security` review
+- `canister-security` review — **done 2026-09-20, see §11**
 - upgrade/migration test (state survives; the chain does not re-run)
 - Candid diff against the committed `src/*/**.did`
 
@@ -297,13 +297,75 @@ authority must never reduce to a single point of control. The ops floor is a
 scaffold default and needs confirming.
 
 The set starts **empty**; a canister **controller** seeds it via
-`bootstrapAdmin` until the floor is met, after which bootstrap closes
-permanently and the admins govern each other. Every admin method rejects the
-anonymous principal explicitly.
+`bootstrapAdmin` until the floor is met, which sets a **stable latch**
+(`bootstrap.closed`) that is never cleared — so bootstrap stays shut even if the
+floor is later raised (§11). From then on the admins govern each other. Every
+admin method rejects the anonymous principal explicitly, and `#anonymousTarget`
+is distinct from `#anonymousCaller`.
+
+**The floor binds admins, not controllers** — see §11, standing constraint 1.
 
 ---
 
-## 11. Environment notes
+## 11. Security review — 2026-09-20
+
+Full `canister-security` + `reviewing-motoko` pass over the access-control
+spine. One code defect found and fixed; the rest are standing constraints that
+Phase 2 must respect.
+
+### Fixed
+
+**Bootstrap did not actually latch (Blocker-shaped).** `bootstrapAdmin` derived
+"closed" from `admins.size() >= floor`. That is not permanent: **raising** the
+floor later — which §5 explicitly permits — makes the set fall below it and
+silently **reopens a controller-only path into the admin set**, bypassing
+admin-governed `addAdmin`. Now a stable `bootstrap.closed` latch, set once when
+the floor is reached and never cleared. Regression-tested by raising the
+registry floor to 3 with 2 admins: latch stayed `true`, `bootstrapAdmin`
+returned `#bootstrapClosed`.
+
+**`#anonymousCaller` was overloaded**, meaning both "you are anonymous" and
+"you offered the anonymous principal as a target". Split out `#anonymousTarget`.
+
+### Standing constraints — not bugs, do not "fix" in code
+
+**1. Controllers outrank every rule in this repo.** A controller can upgrade or
+reinstall the canister and replace the admin logic wholesale. So the two-admin
+floor constrains *admins*, never *controllers*. **Today there is exactly one
+local controller, which makes the floor decorative.** §4 already gates the
+engine deploy on a second controller, but frames it as key-loss insurance; the
+sharper point is **authority**: whoever controls `registry` can mint credentials
+regardless of the admin floor. Before go-live the controller set is the real
+trust root of the credential rail and must be at least as strong as the floor it
+is supposed to protect — two-of-N, a governance canister, or blackholing once
+the rail stabilises. **This is a decision for Ahmed, not a code change.**
+
+**2. Queries are uncertified.** `listAdmins`, `adminCount`, `adminFloor`,
+`bootstrapClosed`, `callerIsAdmin` and `schemaVersion` are plain `query` calls,
+answered by a single replica that could lie. Fine for UI display; **never let a
+verifier or another canister make a trust decision on them.** Phase 2's `verify`
+must use the certified path (proven viable in `spikes/FINDINGS.md`).
+
+**3. Recovery is controller-only.** If both admins lose their keys, the floor
+blocks removal and the latch blocks bootstrap, so the admin set becomes
+unreachable. The only recovery is a controller upgrade — another reason (1)
+matters.
+
+**4. Cycle-drain surface.** Every update method is callable by anyone; rejection
+still burns cycles. Free on a cloud engine, real on mainnet — so weigh it if the
+§8 decision puts `registry` on mainnet. `inspect_message` is a legitimate
+*cycle-saving* optimisation only, **never** a security boundary; access checks
+stay inside every method.
+
+### Phase 2 must handle
+
+**TOCTOU across `await`.** Nothing in the current code awaits, so there is no
+reentrancy exposure today. `lib/Signer.mo` changes that: `requireAdmin` →
+`await sign(...)` → mutate state is the classic hole, because the admin set can
+change across the await. Use the CallerGuard pattern from `canister-security`,
+and re-check authorisation *after* the await before committing state.
+
+## 12. Environment notes
 
 - Toolchain: `icp` (never `dfx`), `mops`, `moc` pinned in `mops.toml`.
 - `mops.toml` depends on `core = "2.6.2"` from the mops registry. If the

@@ -10,6 +10,8 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 ENV_NAME=local
+# Bump together with `schema` in the migration chain.
+EXPECT_SCHEMA=2
 CANISTER="${1:-registry}"
 PASS=0; FAIL=0
 
@@ -42,6 +44,7 @@ echo "-- baseline (fresh install) --"
 check "adminFloor is 2"                 ct-admin-a "(2 : nat)"       adminFloor
 check "adminCount starts 0"             ct-admin-a "(0 : nat)"       adminCount
 check "listAdmins starts empty"         ct-admin-a "(vec {})"        listAdmins
+check "bootstrap latch starts OPEN"     ct-admin-a "(false)"         bootstrapClosed
 
 echo "-- anonymous caller is rejected --"
 check "anon addAdmin"                   anonymous  "anonymousCaller" addAdmin       "(principal \"$A\")"
@@ -51,21 +54,26 @@ check "anon callerIsAdmin is false"     anonymous  "(false)"         callerIsAdm
 
 echo "-- bootstrap is controller-only --"
 check "non-controller bootstrap"        ct-outsider "notAuthorized"  bootstrapAdmin "(principal \"$O\")"
-check "cannot bootstrap anonymous"      ct-admin-a  "anonymousCaller" bootstrapAdmin "(principal \"$ANON\")"
+check "cannot bootstrap anonymous"      ct-admin-a  "anonymousTarget" bootstrapAdmin "(principal \"$ANON\")"
 check "controller bootstraps A"         ct-admin-a  "ok"             bootstrapAdmin "(principal \"$A\")"
 check "duplicate bootstrap of A"        ct-admin-a  "alreadyAdmin"   bootstrapAdmin "(principal \"$A\")"
 check "adminCount now 1"                ct-admin-a  "(1 : nat)"      adminCount
 check "controller bootstraps B"         ct-admin-a  "ok"             bootstrapAdmin "(principal \"$B\")"
 check "adminCount now 2"                ct-admin-a  "(2 : nat)"      adminCount
 
-echo "-- bootstrap closes permanently at the floor --"
+echo "-- bootstrap latches shut at the floor --"
 check "bootstrap after floor reached"   ct-admin-a  "bootstrapClosed" bootstrapAdmin "(principal \"$O\")"
+
+# The latch is stable state, not `size >= floor`. If it were derived, raising
+# the floor after go-live would silently reopen this controller-only path.
+check "latch CLOSED after floor"        ct-admin-a  "(true)"          bootstrapClosed
 
 echo "-- admin-only mutation --"
 check "non-admin addAdmin"              ct-outsider "notAuthorized"  addAdmin       "(principal \"$O\")"
 check "non-admin removeAdmin"           ct-outsider "notAuthorized"  removeAdmin    "(principal \"$B\")"
 check "admin adds outsider"             ct-admin-a  "ok"             addAdmin       "(principal \"$O\")"
 check "duplicate addAdmin"              ct-admin-a  "alreadyAdmin"   addAdmin       "(principal \"$O\")"
+check "cannot add anonymous as admin"   ct-admin-a  "anonymousTarget" addAdmin      "(principal \"$ANON\")"
 check "adminCount now 3"                ct-admin-a  "(3 : nat)"      adminCount
 
 echo "-- the admin floor holds --"
@@ -76,8 +84,11 @@ check "remove unknown principal"        ct-admin-a  "unknownAdmin"   removeAdmin
 check "adminCount still 2"              ct-admin-a  "(2 : nat)"      adminCount
 
 echo "-- schema introspection --"
-check "schemaVersion is readable"        ct-admin-a  "(1 : nat)"      schemaVersion
-check "schemaVersion open to anonymous"  anonymous   "(1 : nat)"      schemaVersion
+check "schemaVersion is readable"        ct-admin-a  "($EXPECT_SCHEMA : nat)" schemaVersion
+check "schemaVersion open to anonymous"  anonymous   "($EXPECT_SCHEMA : nat)" schemaVersion
+
+check "latch still closed at floor"     ct-admin-a  "(true)"          bootstrapClosed
+check "bootstrap stays shut"            ct-admin-a  "bootstrapClosed" bootstrapAdmin "(principal \"$O\")"
 
 echo "-- identity reflection --"
 check "admin sees callerIsAdmin true"   ct-admin-a  "(true)"         callerIsAdmin

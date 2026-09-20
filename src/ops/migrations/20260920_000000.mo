@@ -17,6 +17,7 @@ module {
   type OldActor = {};
   type NewActor = {
     admins : Set.Set<Principal>;
+    bootstrap : { var closed : Bool };
     schema : Nat;
   };
 
@@ -25,8 +26,11 @@ module {
       // Starts empty; a controller seeds it via `bootstrapAdmin` until the
       // admin floor is met, after which bootstrap closes permanently.
       admins = Set.empty();
+      // Bootstrap latch. Starts open; closes for good once the admin floor
+      // is reached. Never reset to false.
+      bootstrap = { var closed = false };
       // Bump whenever the stable shape above changes.
-      schema = 1;
+      schema = 2;
     };
   };
 };

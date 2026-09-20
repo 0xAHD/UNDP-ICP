@@ -1,5 +1,6 @@
 import Set "mo:core/Set";
 import Principal "mo:core/Principal";
+import SharedTypes "../shared/Types";
 import AdminApi "mixins/Admin";
 import MetaApi "mixins/Meta";
 
@@ -20,8 +21,11 @@ persistent actor {
   /// Stable-shape version, supplied by the migration chain.
   /// Named `schema` because `include` injects mixin names into this same
   /// scope, and the Meta mixin exposes a `schemaVersion` query.
+  /// Latch recording that bootstrap has finished. See shared/Types.mo.
+  let bootstrap : SharedTypes.BootstrapState;
+
   let schema : Nat;
 
-  include AdminApi(admins);
+  include AdminApi(admins, bootstrap);
   include MetaApi(schema);
 };
