@@ -1,0 +1,4 @@
+node_modules/
+.icp/cache/
+.mops/
+package-lock.json

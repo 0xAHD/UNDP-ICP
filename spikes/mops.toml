@@ -1,0 +1,14 @@
+[dependencies]
+core = "2.6.2"
+
+[canisters.spike_signer]
+main = "src/signing/main.mo"
+
+[canisters.spike_certified]
+main = "src/certified/main.mo"
+
+[moc]
+args = ["-W", "M0236,M0237,M0223"]
+
+[toolchain]
+moc = "1.16.1"

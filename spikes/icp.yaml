@@ -1,0 +1,19 @@
+# SPIKES ONLY — throwaway, local replica, port 8100.
+# Never deploy these anywhere else. They bake in no schema and are not
+# part of the product.
+canisters:
+  - name: spike_signer
+    recipe:
+      type: "@dfinity/motoko@v5.1.0"
+  - name: spike_certified
+    recipe:
+      type: "@dfinity/motoko@v5.1.0"
+networks:
+  - name: local
+    mode: managed
+    gateway:
+      port: 8100
+environments:
+  - name: local
+    network: local
+    canisters: [spike_signer, spike_certified]

@@ -35,6 +35,9 @@ exists to prevent.
 **The `registry` canister's principal IS the credential DID, permanently.**
 
 - **NEVER** `reinstall` or `delete` the registry canister.
+- **Qualified by §8:** the DID *identifier* is this principal, but on a cloud
+  engine the *signing key* behind it is anchored to the console proxy. Read §8
+  before treating this canister as the sole root of the credential rail.
 - `icp deploy --mode reinstall` wipes state and is forbidden for `registry`.
 - Commit `.icp/data/`. It holds `mappings/<environment>.ids.json`, the
   canister-name → canister-ID map. Losing it loses the DID mapping.
@@ -173,6 +176,11 @@ Blocked on Ahmed's decisions. **Do not model or implement these:**
   ship an update-call `verify` for v1 and document the upgrade path.
 - **Any engine or mainnet deploy** (§4).
 
+**Now unblocked by the spikes** (`spikes/FINDINGS.md`): the signing and
+certified-query mechanisms are proven locally, so Phase 2 can be built as soon
+as the record shape arrives. The open *decision* is the proxy/DID question in
+§8, which is Ahmed's, not ours.
+
 ### Missing source documents
 
 None of the READ FIRST documents are in this repo. The credential and storage
@@ -194,19 +202,34 @@ Ask for them; do not reconstruct them from memory or infer the schema.
 
 ## 8. Engine constraint that changes the Phase 2 design
 
-From the `cloud-engine-canisters` skill — **worth confirming before building
-`lib/Signer.mo`:**
+**Verified by spike, 2026-09-20 — see `spikes/FINDINGS.md`.**
 
-On a CloudEngine subnet, canisters hold **0 cycles** and cycle-bearing
-cross-subnet calls (including **threshold Ed25519/Schnorr signing**) must go
-through the **engine's proxy canister**, with arguments hand-encoded. Calling
-the management canister `aaaaa-aa` directly is correct **locally** but will not
-work unchanged on the engine, and derived keys belong to the *proxy*, not to
-this canister — which has consequences for the credential DID.
+**Cloud engines provide no threshold signing at all.** An engine canister
+reaches mainnet's signing only through the **console proxy canister**.
+`sign_with_schnorr` has no `canister_id` field — the key is always the caller's,
+and behind the proxy the caller is the proxy. So:
 
-Never attach cycles on an engine call (`IC0504`).
+> The issuer signing key is anchored to **(proxy canister id) + [registry
+> principal, …]**, **not** to `registry` alone.
 
----
+- A different proxy derives different keys; the old key is unrecoverable.
+- **Deleting a proxy destroys its keys permanently.**
+- A self-deployed proxy does no caller isolation, so it derives differently again.
+
+**This qualifies §2.** `registry`'s principal can be the credential DID as an
+*identifier*, but the signing key behind it depends on the proxy. The proxy is
+then permanent infrastructure, as load-bearing as the canister — and deletable
+from a console UI. **Decide before go-live** (options in `spikes/FINDINGS.md`
+§2): accept the proxy as permanent, put `registry` on mainnet instead so it
+signs via `aaaaa-aa` directly, or keep the issuer key off-chain.
+
+Never attach cycles on an engine call (`IC0504`). HTTPS outcalls are free and
+must not go through the proxy.
+
+**What does work locally** (so Phase 2 is developable): `aaaaa-aa`
+threshold Ed25519 on a local replica — keys `dfx_test_key`, `key_1`,
+`test_key_1`; 32-byte public key (free), 64-byte signature, 10_000_000_000
+cycles per signature. Signatures verify with stock Ed25519 off-chain.
 
 ## 9. Testing gate
 
@@ -220,6 +243,14 @@ output**. Never claim a build or test passed without having run it this session.
 - `canister-security` review
 - upgrade/migration test (state survives; the chain does not re-run)
 - Candid diff against the committed `src/*/**.did`
+
+Spike results that change the gate (`spikes/FINDINGS.md`): the certified-query
+path verifies end to end locally, and **certified data survives a canister
+upgrade** — so the `certified-variables` skill's pitfall 7 (re-certify in
+`postupgrade`) does not bite our persistence model. Confirm on mainnet before
+relying on it. A certified-query `verify` is therefore viable for v1; the four
+assumptions in `phase2-decisions` remain untested because that document is
+still missing.
 
 `./scripts/dev.sh test` runs reset + the full governance suite on both
 canisters (29 cases each). The issuance/revocation/tamper cases arrive with
