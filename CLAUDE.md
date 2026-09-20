@@ -181,22 +181,31 @@ certified-query mechanisms are proven locally, so Phase 2 can be built as soon
 as the record shape arrives. The open *decision* is the proxy/DID question in
 §8, which is Ahmed's, not ours.
 
-### Missing source documents
+### Source documents
 
-None of the READ FIRST documents are in this repo. The credential and storage
-design cannot be completed without them:
+**Authored 2026-09-20 — they did not exist before and were NOT reconstructed.**
+Each tags its claims: **[VERIFIED]** proven this session · **[RULE]** stated by
+Ahmed · **[PROPOSED]** needs sign-off · **[NEEDS INPUT]** only Ahmed or UNDP can
+settle.
 
-```
-claude/personal-data-on-chain.md
-claude/opencloud-engine-deployment.md
-claude/gba-credentials-v1-plan.md
-claude/gba-credentials-v1-phase1-results.md
-claude/gba-credentials-v1-phase2-decisions.md
-claude/gba-credentials-v1-release-process.md
-cohort-tracker-interface-v1.md
-```
+| Document | Status |
+|---|---|
+| `claude/personal-data-on-chain.md` | Binding. Expands §1; adds the digest/re-identification rule |
+| `claude/opencloud-engine-deployment.md` | Toolchain + engine constraints + deploy gate |
+| `claude/gba-credentials-v1-plan.md` | Rail design and trust model — proposed |
+| `claude/gba-credentials-v1-phase1-results.md` | **Records only work actually run.** Explicit gaps where a prior Phase 1 would go |
+| `claude/gba-credentials-v1-phase2-decisions.md` | **Proposals, not recovered decisions.** Carries the DECISIONS OWED that block Phase 2 |
+| `claude/gba-credentials-v1-release-process.md` | Freeze point, release gate, go-live checklist, rollback |
+| `cohort-tracker-interface-v1.md` | Implemented interface + Phase 2 sketch |
 
-Ask for them; do not reconstruct them from memory or infer the schema.
+**Read the ⚠ banners in `-phase1-results.md` and `-phase2-decisions.md` before
+relying on either.** Neither recovers a lost original; content is proposed or
+evidenced, never invented. If the real originals surface, reconcile rather than
+assuming these supersede them.
+
+**Phase 2 is still blocked** — not on feasibility (the spikes settled that) but
+on the **DECISION OWED** items in `-phase2-decisions.md`, chiefly the on-chain
+record shape (§2) and the proxy/DID question (§3).
 
 ---
 
