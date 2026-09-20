@@ -106,8 +106,64 @@ randomly generated, never derived from personal data — an ID derived from
 `hash(email)` re-creates the §4 problem and silently makes the join key itself
 identifying.
 
-**[NEEDS INPUT]** Which off-chain store holds participant names. Still open;
-blocks the `ops` data model (CLAUDE.md §7).
+**[NEEDS INPUT]** Which off-chain store holds participant names. Still open —
+but it no longer blocks `ops`, because of §5a.
+
+---
+
+## 5a. Decision: `ops` puts NO personal data on chain at all
+
+**[DECIDED 2026-09-20]** Ahmed delegated this rather than wait on a UNDP
+data-protection ruling. Taking the strictest defensible posture, because it is
+the only one that needs no ruling and can be relaxed later — the reverse is
+impossible, since on-chain writes are permanent.
+
+**`ops` stores no participant-level data on chain. Not even a pseudonymous
+participant ID.**
+
+Three reasons, in order of weight:
+
+1. **Pseudonymised is not anonymous.** Under GDPR and the UN Personal Data
+   Protection Principles, data that can be re-identified by *anyone* holding the
+   key is still personal data. An opaque participant ID plus an off-chain
+   mapping is pseudonymisation, not anonymisation. Putting it on a public
+   permanent ledger is therefore processing personal data with no possibility of
+   erasure or rectification — the two rights hardest to argue away.
+2. **Small cohorts break k-anonymity anyway.** An accelerator cohort is a dozen
+   or so people, and cohort membership is usually published. `cohort + role +
+   status + a date` is very often unique to one person. Stripping the name does
+   not make the record anonymous when the population is that small.
+3. **There is no operational need.** `ops` is *internal* accelerator
+   operations. Nothing about it requires public, permanent, global consensus.
+   The credential rail needs a public ledger; participant progress tracking does
+   not.
+
+### What `ops` DOES hold on chain
+
+Policy, not people:
+
+- **Cohorts** — identifier, open/closed, dates.
+- **Per-role completion rules** — which milestones a role must complete, frozen
+  once the cohort closes.
+
+This is genuinely worth putting on chain, and it strengthens the credential
+rail: a verifier can see **the standard that was applied** at the time a
+credential was issued, permanently and without trusting us. That is the thing a
+ledger is actually good for here.
+
+### Enforced, not merely stated
+
+Identifiers written on chain are validated at the boundary: lowercase
+`a-z 0-9 -`, 1–32 characters. That makes "no free text" a property the code
+enforces rather than a rule reviewers must remember — a `Text` field with no
+constraint is how a name eventually gets stored.
+
+### To revisit
+
+If participant-level records on chain are ever wanted, that needs **both** a
+UNDP data-protection ruling **and** a k-anonymity assessment for realistic
+cohort sizes. Adding them later is an additive migration; removing them is
+impossible.
 
 ---
 

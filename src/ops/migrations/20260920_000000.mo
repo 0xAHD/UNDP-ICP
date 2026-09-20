@@ -1,4 +1,5 @@
 import Set "mo:core/Set";
+import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 
 /// Initial stable shape.
@@ -15,9 +16,23 @@ import Principal "mo:core/Principal";
 /// Self-contained by rule: only `mo:core` imports, both actor shapes inlined.
 module {
   type OldActor = {};
+  // Inlined by rule: migrations import only mo:core, never ../types.
+  type Slug = Text;
+  type Date = Nat;
+  type CohortStatus = { #open; #closed };
+  type Cohort = {
+    id : Slug;
+    status : CohortStatus;
+    openedAt : Date;
+    closedAt : ?Date;
+  };
+  type Rule = { role : Slug; requiredMilestones : [Slug]; setAt : Date };
+
   type NewActor = {
     admins : Set.Set<Principal>;
     bootstrap : { var closed : Bool };
+    cohorts : Map.Map<Slug, Cohort>;
+    rules : Map.Map<Slug, Map.Map<Slug, Rule>>;
     schema : Nat;
   };
 
@@ -30,7 +45,9 @@ module {
       // is reached. Never reset to false.
       bootstrap = { var closed = false };
       // Bump whenever the stable shape above changes.
-      schema = 2;
+      cohorts = Map.empty();
+      rules = Map.empty();
+      schema = 3;
     };
   };
 };

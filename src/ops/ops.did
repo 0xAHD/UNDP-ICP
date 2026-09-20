@@ -1,7 +1,57 @@
-type Result = 
+type Slug = text;
+type RuleError = 
+ variant {
+   anonymousCaller;
+   cohortClosed;
+   duplicateMilestone;
+   invalidIdentifier;
+   notAuthorized;
+   tooManyMilestones;
+   unknownCohort;
+ };
+type Rule = 
+ record {
+   requiredMilestones: vec Slug;
+   role: Slug;
+   setAt: Date;
+ };
+type Result_2 = 
+ variant {
+   err: CohortError;
+   ok;
+ };
+type Result_1 = 
  variant {
    err: AccessError;
    ok;
+ };
+type Result = 
+ variant {
+   err: RuleError;
+   ok;
+ };
+type Date = nat;
+type CohortStatus = 
+ variant {
+   closed;
+   open;
+ };
+type CohortError = 
+ variant {
+   alreadyClosed;
+   anonymousCaller;
+   cohortClosed;
+   duplicateCohort;
+   invalidIdentifier;
+   notAuthorized;
+   unknownCohort;
+ };
+type Cohort = 
+ record {
+   closedAt: opt Date;
+   id: Slug;
+   openedAt: Date;
+   status: CohortStatus;
  };
 type AccessError = 
  variant {
@@ -15,24 +65,38 @@ type AccessError =
  };
 service : {
   /// Admit a new admin. Requires an existing admin.
-  addAdmin: (who: principal) -> (Result);
+  addAdmin: (who: principal) -> (Result_1);
   adminCount: () -> (nat) query;
   /// The floor this canister enforces.
   adminFloor: () -> (nat) query;
   /// Seed the admin set. Controller-only, and only until the admin floor
   /// is reached — after that this returns `#bootstrapClosed` forever.
-  bootstrapAdmin: (who: principal) -> (Result);
+  bootstrapAdmin: (who: principal) -> (Result_1);
   /// Has bootstrap latched shut? Once true this never goes back, even if
   /// the admin floor is later raised.
   bootstrapClosed: () -> (bool) query;
   /// Whether the calling principal holds admin rights.
   callerIsAdmin: () -> (bool) query;
+  /// Close a cohort, freezing its rules permanently. There is no reopen.
+  closeCohort: (id: Slug) -> (Result_2);
+  completionRule: (cohort: Slug, role: Slug) -> (opt Rule) query;
+  /// Every rule for a cohort — the full standard that applied.
+  completionRules: (cohort: Slug) -> (vec Rule) query;
+  getCohort: (id: Slug) -> (opt Cohort) query;
   /// The current admin set. Public by design: these are governance
   /// principals, not participant data.
   listAdmins: () -> (vec principal) query;
+  listCohorts: () -> (vec Cohort) query;
+  /// The cap on milestones per rule, so callers can check before submitting.
+  maxMilestones: () -> (nat) query;
+  /// Open a cohort. `id` must be a valid slug — see `lib/Slug.mo`.
+  openCohort: (id: Slug) -> (Result_2);
   /// Remove an admin, never dropping below the configured admin floor.
-  removeAdmin: (who: principal) -> (Result);
+  removeAdmin: (who: principal) -> (Result_1);
   /// Schema version, set by the migration chain in `migrations/`.
   /// Bump it in the migration whenever the stable shape changes.
   schemaVersion: () -> (nat) query;
+  /// Set what a role must complete in an OPEN cohort.
+  setCompletionRule: (cohort: Slug, role: Slug, requiredMilestones:
+   vec Slug) -> (Result);
 }

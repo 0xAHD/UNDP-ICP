@@ -17,7 +17,7 @@ PASS=0; FAIL=0
 # that canister's migration chain.
 case "$CANISTER" in
   registry) EXPECT_SCHEMA=3 ;;   # + issuer keys and credential records
-  ops)      EXPECT_SCHEMA=2 ;;   # governance only
+  ops)      EXPECT_SCHEMA=3 ;;   # + cohorts and completion rules
   *)        EXPECT_SCHEMA=2 ;;
 esac
 

@@ -1,22 +1,68 @@
 // Version: 4.0.0
+type CohortStatus__660954017 = {#closed; #open};
+type CohortStatus__867586452 = {#closed; #open};
+type Cohort__476688918 =
+  {
+    closedAt : ?Date__540571113;
+    id : Slug__1056936380;
+    openedAt : Date__540571113;
+    status : CohortStatus__660954017
+  };
+type Cohort__570388718 =
+  {
+    closedAt : ?Date__1028975896;
+    id : Slug__793488666;
+    openedAt : Date__1028975896;
+    status : CohortStatus__867586452
+  };
 type Data__838833191<T> = {var count : Nat__920310729; elements : [var ?T]};
+type Data__9662644<K, V> = {var count : Nat__920310729; kvs : [var ?(K, V)]};
+type Date__1028975896 = Nat;
+type Date__540571113 = Nat;
 type Internal__493296107<T> =
   {children : [var ?Node__1005781198<T>]; data : Data__838833191<T>};
+type Internal__518044657<K, V> =
+  {children : [var ?Node__579855337<K, V>]; data : Data__9662644<K, V>};
 type Leaf__178727986<T> = {data : Data__838833191<T>};
+type Leaf__239087917<K, V> = {data : Data__9662644<K, V>};
+type Map__1040905135<K, V> = Map__793052098<K, V>;
+type Map__423296351<K, V> = Map__1040905135<K, V>;
+type Map__793052098<K, V> =
+  {var root : Node__579855337<K, V>; var size : Nat__920310729};
 type Nat__920180692 = Nat;
 type Nat__920310729 = Nat__920180692;
 type NewActor__848866106 =
   {
     admins : Set__741069794<Principal>;
     bootstrap : {var closed : Bool};
+    cohorts : Map__423296351<Slug__793488666, Cohort__570388718>;
+    rules :
+      Map__423296351<Slug__793488666,
+                      Map__423296351<Slug__793488666, Rule__658640675>>;
     schema : Nat
   };
 type Node__1005781198<T> =
   {#internal : Internal__493296107<T>; #leaf : Leaf__178727986<T>};
+type Node__579855337<K, V> =
+  {#internal : Internal__518044657<K, V>; #leaf : Leaf__239087917<K, V>};
 type OldActor__938247123 = {};
+type Rule__651236706 =
+  {
+    requiredMilestones : [Slug__1056936380];
+    role : Slug__1056936380;
+    setAt : Date__540571113
+  };
+type Rule__658640675 =
+  {
+    requiredMilestones : [Slug__793488666];
+    role : Slug__793488666;
+    setAt : Date__1028975896
+  };
 type Set__72989423<T> =
   {var root : Node__1005781198<T>; var size : Nat__920310729};
 type Set__741069794<T> = Set__72989423<T>;
+type Slug__1056936380 = Text;
+type Slug__793488666 = Text;
 {
   "20260920_000000" : (_old : OldActor__938247123) -> NewActor__848866106
 }
@@ -24,5 +70,17 @@ actor  {
   stable admins :
     {var root : Node__1005781198<Principal>; var size : Nat__920310729};
   stable bootstrap : {var closed : Bool};
+  stable cohorts :
+    {
+      var root : Node__579855337<Slug__1056936380, Cohort__476688918>;
+      var size : Nat__920310729
+    };
+  stable rules :
+    {
+      var root :
+        Node__579855337<Slug__1056936380,
+                         Map__423296351<Slug__1056936380, Rule__651236706>>;
+      var size : Nat__920310729
+    };
   stable schema : Nat
 };

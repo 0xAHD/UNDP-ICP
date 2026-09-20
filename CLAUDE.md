@@ -72,6 +72,41 @@ effect**. One approval covers one action; it does not carry to the next.
 
 ---
 
+## 4a. HARD GATES — must be revisited before anything goes live
+
+**[DECIDED 2026-09-20]** Ahmed deferred these deliberately. They are *not*
+open questions for now, and *not* to be quietly resolved by an agent later.
+Each blocks go-live and must be answered by Ahmed at that point.
+
+### GATE 1 — Pilot posture expires
+
+The current build assumes a **pilot**. That assumption is load-bearing for the
+issuer-key design: the private key is an ordinary Ed25519 key held off chain
+(`gba-credentials-v1-phase2-decisions.md` §0/§3, option C). Fine for a pilot,
+**not** fine for credentials that must stay authoritative for years, because
+that key can be exfiltrated in a way a threshold key cannot.
+
+**Before real credentials are issued**, re-run the §3 decision. Moving to
+threshold signing later is cheap *by design* — issuer keys are append-only, so
+it is "add a new key and sign with it", and credentials under the old key stay
+verifiable. Do not let that cheapness become a reason to never do it.
+
+### GATE 2 — Second controller before any deploy
+
+Today there is **one** controller, which makes the two-admin floor decorative:
+a controller can upgrade the canister and replace the admin logic wholesale
+(§11, standing constraint 1). Whoever controls `registry` can mint credentials
+regardless of the floor.
+
+**Before the first engine or mainnet deploy**, the controller set must be at
+least as strong as the floor it protects — two-of-N, a governance canister, or
+blackholed once the rail stabilises.
+
+**Neither gate is an engineering decision. Do not decide either on Ahmed's
+behalf.**
+
+---
+
 ## 5. Iterating before go-live
 
 **Everything here is changeable right now. Almost none of it is changeable
@@ -163,10 +198,16 @@ rather than recalling them (`@dfinity/motoko@v5.1.0` is current; a recalled
 
 Blocked on Ahmed's decisions. **Do not model or implement these:**
 
-- **`ops` data model + off-chain store wiring** — waits on the funding-note
-  storage basis (a UNDP data-protection call, *not ours to make*), which
-  off-chain store holds participant names, and the per-role completion-rule
-  values.
+- ~~**`ops` data model**~~ — **DECIDED + BUILT 2026-09-20**. Ahmed delegated the
+  data-protection call rather than wait on UNDP. Decision
+  (`claude/personal-data-on-chain.md` §5a): `ops` holds **no participant-level
+  data on chain at all**, not even a pseudonymous ID. On chain it keeps
+  **policy** — cohorts and per-role completion rules, frozen when a cohort
+  closes. Participant progress stays entirely off chain.
+  Adding participant records later needs a UNDP ruling **and** a k-anonymity
+  assessment; it is an additive migration, and it is not reversible.
+- **Which off-chain store holds participant names** — still open, but no longer
+  blocking: nothing on chain references a participant.
 - ~~**`registry` credential logic (GBA Phase 2)**~~ — **BUILT 2026-09-20** as
   the MVP, per the decisions in `claude/gba-credentials-v1-phase2-decisions.md`
   §0. Issuer key is **off chain** (option C), so there is no `lib/Signer.mo`,
@@ -271,8 +312,8 @@ assumptions in `phase2-decisions` remain untested because that document is
 still missing.
 
 `./scripts/dev.sh test` runs reset + the governance suites on both canisters
-(34 each) + the end-to-end credential flow (28) + the verification page in a
-real browser (14) — **110 in total**. The page is in the gate deliberately: it
+(34 each) + ops cohorts and completion rules (28) + the end-to-end credential
+flow (28) + the verification page in a real browser (14) — **138 in total**. The page is in the gate deliberately: it
 is the product surface, so a break there matters as much as a canister break.
 
 **CI** (`.github/workflows/ci.yml`) runs the same thing on every push: a fast
@@ -295,8 +336,10 @@ src/<canister>/
   types.mo             domain types
   lib/                 domain logic (Admin.mo; registry adds Issuer.mo,
                        Credentials.mo — there is NO Signer.mo: the issuer key
-                       is off chain and the canister never signs)
-  mixins/              public endpoints (registry adds Issuance.mo, Verify.mo)
+                       is off chain and the canister never signs; ops adds
+                       Slug.mo and Cohorts.mo)
+  mixins/              public endpoints (registry adds Issuance.mo, Verify.mo;
+                       ops adds Cohorts.mo)
   main.mo              composition root — NO public methods
   migrations/          YYYYMMDD_HHMMSS.mo, mops-managed chain
 
@@ -318,6 +361,10 @@ Rules that bite:
 - `mo:core` only (never `mo:base`), dot notation, no `stable` keyword, no
   `preupgrade`/`postupgrade`.
 - Access refusals are **returned** as `#err`, not trapped, so they are testable.
+- **Identifiers written to state are slug-validated** (`ops/lib/Slug.mo`:
+  lowercase, digits, hyphen, 1..32). That makes "no free text on chain" a thing
+  the code enforces rather than a rule reviewers must remember — an
+  unconstrained `Text` field is how a name eventually gets stored.
 - `include` injects mixin declarations into the **actor's own scope**, so a
   stable field and a mixin method cannot share a name (`M0051`). Hence the
   field `schema` behind the `schemaVersion()` query.
