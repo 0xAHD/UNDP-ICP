@@ -167,13 +167,14 @@ Blocked on Ahmed's decisions. **Do not model or implement these:**
   storage basis (a UNDP data-protection call, *not ours to make*), which
   off-chain store holds participant names, and the per-role completion-rule
   values.
-- **`registry` credential logic (GBA Phase 2)** — threshold Ed25519 signing
-  (`lib/Signer.mo`), append-only issuer keys, digest-keyed records, certified
-  `issuerKeys`, and the trimmed on-chain record shape. This is fixed by
-  `claude/gba-credentials-v1-phase2-decisions.md`.
-- **`verify` certified-query spike** — the four unverified assumptions in
-  phase2-decisions must be proven on a local replica *first*. If any fails,
-  ship an update-call `verify` for v1 and document the upgrade path.
+- ~~**`registry` credential logic (GBA Phase 2)**~~ — **BUILT 2026-09-20** as
+  the MVP, per the decisions in `claude/gba-credentials-v1-phase2-decisions.md`
+  §0. Issuer key is **off chain** (option C), so there is no `lib/Signer.mo`,
+  no threshold signing, no proxy, no cycles and **no `await` anywhere** in the
+  canister. `verify` is an **update call**, not a certified query.
+- ~~**`verify` certified-query spike**~~ — **DONE**, see `spikes/FINDINGS.md`.
+  Certified queries work, but the MVP deliberately ships the simpler
+  update-call `verify`; the upgrade path is in phase2-decisions §5.
 - **Any engine or mainnet deploy** (§4).
 
 **Now unblocked by the spikes** (`spikes/FINDINGS.md`): the signing and
@@ -249,6 +250,8 @@ output**. Never claim a build or test passed without having run it this session.
 - `mops build` clean
 - local-replica integration incl. adversarial cases: anonymous caller,
   non-admin, duplicate issuance, revoked, tampered, unknown digest
+  — **all covered as of 2026-09-20**: 34 governance cases per canister plus a
+  28-case end-to-end credential flow signing with a real Ed25519 key
 - `canister-security` review — **done 2026-09-20, see §11**
 - upgrade/migration test (state survives; the chain does not re-run)
 - Candid diff against the committed `src/*/**.did`
@@ -261,9 +264,9 @@ relying on it. A certified-query `verify` is therefore viable for v1; the four
 assumptions in `phase2-decisions` remain untested because that document is
 still missing.
 
-`./scripts/dev.sh test` runs reset + the full governance suite on both
-canisters (29 cases each). The issuance/revocation/tamper cases arrive with
-Phase 2. Pre-live, `reset` also re-promotes the `deployed/*.most` baseline;
+`./scripts/dev.sh test` runs reset + the governance suites on both canisters
+(34 cases each) + the end-to-end credential flow (28 cases) — **96 in total**.
+Pre-live, `reset` also re-promotes the `deployed/*.most` baseline;
 after go-live the baseline must only ever be promoted after a real deploy.
 
 ---
@@ -276,8 +279,10 @@ Per `writing-motoko`:
 src/shared/            Access.mo, Types.mo   — access control, single-sourced
 src/<canister>/
   types.mo             domain types
-  lib/                 domain logic (Admin.mo; Signer.mo later)
-  mixins/              public endpoints
+  lib/                 domain logic (Admin.mo; registry adds Issuer.mo,
+                       Credentials.mo — there is NO Signer.mo: the issuer key
+                       is off chain and the canister never signs)
+  mixins/              public endpoints (registry adds Issuance.mo, Verify.mo)
   main.mo              composition root — NO public methods
   migrations/          YYYYMMDD_HHMMSS.mo, mops-managed chain
 ```

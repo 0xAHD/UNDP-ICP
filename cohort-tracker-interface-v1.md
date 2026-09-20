@@ -66,43 +66,65 @@ floor is later raised. From then on admins govern each other.
 
 ---
 
-## 3. Phase 2 — `registry` additions — **[PROPOSED]**
+## 3. `registry` credential rail — **[VERIFIED]** built 2026-09-20
 
-Blocked on `claude/gba-credentials-v1-phase2-decisions.md`. Sketch only; the
-record shape is **not** settled and must not be implemented from this file.
+MVP per `claude/gba-credentials-v1-phase2-decisions.md` §0. The issuer private
+key is **off chain**: the canister never signs and never verifies signatures.
+An off-chain issuer signs the digest and submits it; a verifier checks the
+signature client-side against the issuer key the canister returns.
+
+Consequences: no `Signer.mo`, no threshold signing, no proxy, no cycles, and
+**no `await` anywhere in the canister** — so no TOCTOU or reentrancy surface.
 
 ```candid
-type Status = variant { active; revoked };
-
-type Record = record {
-  status          : Status;
-  statusChangedAt : Date;       // a DATE, not a timestamp — §2 of the decisions doc
-  issuerKeyId     : KeyId;
-  signature       : blob;
-};
-
-type VerifyReply = record {
-  record_      : opt Record;    // null = unknown digest
-  certificate  : blob;          // subnet BLS certificate
-  witness      : opt blob;      // Merkle proof, if per-digest certification is chosen
+type KeyId = nat;
+type Date  = nat;                         // days since the Unix epoch
+type KeyStatus  = variant { active; retired; compromised };
+type IssuerKey  = record { id : KeyId; publicKey : blob;
+                           status : KeyStatus; addedAt : Date };
+type Status     = variant { active; revoked };
+type Record     = record { status : Status; statusChangedAt : Date;
+                           issuerKeyId : KeyId; signature : blob };
+type VerifyReply = variant {
+  unknown;                                // a valid answer, not an error
+  found : record { credential : Record; issuerKey : IssuerKey };
 };
 
 service : {
-  // issuance — admin only, idempotent per digest
-  issue        : (digest : blob) -> (variant { ok; err : IssueError });
-  revoke       : (digest : blob) -> (variant { ok; err : RevokeError });
+  // admin only
+  addIssuerKey       : (publicKey : blob) -> (Result_4);        // append-only
+  setIssuerKeyStatus : (id : KeyId, status : KeyStatus) -> (Result);
+  issue              : (digest : blob, issuerKeyId : KeyId,
+                        signature : blob) -> (Result_3);        // idempotent
+  revoke             : (digest : blob) -> (Result_1);
 
-  // the public entry point — CERTIFIED
-  verify       : (digest : blob) -> (VerifyReply) query;
-  issuerKeys   : ()             -> (vec IssuerKey) query;   // certified, append-only
+  // public — anonymous callers allowed, by design
+  verify             : (digest : blob) -> (VerifyReply);        // UPDATE call
+  issuerKeys         : () -> (vec IssuerKey) query;
+  issuerKeyCount     : () -> (nat) query;
+  credentialCount    : () -> (nat) query;
 }
 ```
 
-**[NEEDS INPUT]** `Date` representation, whether `Status` needs a third state,
-whether `issuerKeyId` is exposed, and the certification granularity — all in
-`-phase2-decisions.md` §2 and §5.
+**Why `verify` is an update call.** A query is answered by one replica that
+could lie; an update goes through consensus, so it is trustworthy with no
+certification plumbing (decisions §5). Certified queries were proven viable
+(`spikes/FINDINGS.md`) — the upgrade is a drop-in, the record shape does not
+change.
 
----
+**Validation enforced on issuance:** digest exactly 32 bytes, signature exactly
+64 bytes, issuer key must exist and be `#active`, and the digest must not
+already have a record (**duplicate issuance is refused, never overwritten** —
+silently overwriting would let an admin swap the signature on an issued
+credential).
+
+**There is deliberately no method to list digests.** `credentialCount` returns a
+count only, so cohort membership cannot be harvested from the chain.
+
+**[VERIFIED]** 28-case end-to-end flow with a real Ed25519 keypair: admin-only
+issuance, duplicate refusal, client-side signature verification, tampered-digest
+rejection, unknown digest, revocation visible to verifiers, retired keys unable
+to issue but still verifying old credentials.
 
 ## 4. `ops` — **[NEEDS INPUT]**
 
@@ -123,10 +145,14 @@ live off chain. See `claude/personal-data-on-chain.md`.
 replica that could lie. They are fine for UI display. **No verifier and no other
 canister may make a trust decision on them.**
 
-**[PROPOSED]** `verify` and `issuerKeys` are the exceptions: they must return a
-subnet certificate the caller verifies against the IC root key. That is the
-entire point of the rail — a verifier trusts the subnet signature, not us.
-Proven viable in `spikes/FINDINGS.md`.
+**[VERIFIED]** `verify` is the exception, and it earns its trust differently in
+the MVP: it is an **update call**, so it goes through consensus rather than a
+single replica. That is trustworthy without certification plumbing.
+
+**[VERIFIED]** `issuerKeys` is still a plain query and therefore uncertified.
+For the MVP a verifier should treat the issuer key returned *inside the `verify`
+reply* as authoritative — it came through consensus — and use `issuerKeys` only
+for display. Certifying the key set is the v2 upgrade (decisions §5).
 
 **[RULE]** Never call `fetchRootKey()` in production client code. Read the root
 key from the `ic_env` cookie (`IC_ROOT_KEY`) and pass it to `HttpAgent.create()`,

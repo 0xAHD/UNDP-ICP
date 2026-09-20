@@ -1,22 +1,74 @@
 // Version: 4.0.0
 type Data__838833191<T> = {var count : Nat__920310729; elements : [var ?T]};
+type Data__9662644<K, V> = {var count : Nat__920310729; kvs : [var ?(K, V)]};
+type Date__123049422 = Nat;
+type Date__523421536 = Nat;
 type Internal__493296107<T> =
   {children : [var ?Node__1005781198<T>]; data : Data__838833191<T>};
+type Internal__518044657<K, V> =
+  {children : [var ?Node__579855337<K, V>]; data : Data__9662644<K, V>};
+type IssuerKey__235430487 =
+  {
+    addedAt : Date__123049422;
+    id : KeyId__350137800;
+    publicKey : Blob;
+    status : KeyStatus__902432176
+  };
+type IssuerKey__977313026 =
+  {
+    addedAt : Date__523421536;
+    id : KeyId__125624539;
+    publicKey : Blob;
+    status : KeyStatus__102897094
+  };
+type KeyId__125624539 = Nat;
+type KeyId__350137800 = Nat;
+type KeyStatus__102897094 = {#active; #compromised; #retired};
+type KeyStatus__902432176 = {#active; #compromised; #retired};
 type Leaf__178727986<T> = {data : Data__838833191<T>};
+type Leaf__239087917<K, V> = {data : Data__9662644<K, V>};
+type Map__1040905135<K, V> = Map__793052098<K, V>;
+type Map__423296351<K, V> = Map__1040905135<K, V>;
+type Map__793052098<K, V> =
+  {var root : Node__579855337<K, V>; var size : Nat__920310729};
 type Nat__920180692 = Nat;
 type Nat__920310729 = Nat__920180692;
 type NewActor__991145740 =
   {
     admins : Set__741069794<Principal>;
     bootstrap : {var closed : Bool};
+    issuer :
+      {
+        keys : Map__423296351<KeyId__125624539, IssuerKey__977313026>;
+        var nextId : KeyId__125624539
+      };
+    records : Map__423296351<Blob, Record__466980218>;
     schema : Nat
   };
 type Node__1005781198<T> =
   {#internal : Internal__493296107<T>; #leaf : Leaf__178727986<T>};
+type Node__579855337<K, V> =
+  {#internal : Internal__518044657<K, V>; #leaf : Leaf__239087917<K, V>};
 type OldActor__738888502 = {};
+type Record__466980218 =
+  {
+    issuerKeyId : KeyId__125624539;
+    signature : Blob;
+    status : Status__526865885;
+    statusChangedAt : Date__523421536
+  };
+type Record__636117662 =
+  {
+    issuerKeyId : KeyId__350137800;
+    signature : Blob;
+    status : Status__666598387;
+    statusChangedAt : Date__123049422
+  };
 type Set__72989423<T> =
   {var root : Node__1005781198<T>; var size : Nat__920310729};
 type Set__741069794<T> = Set__72989423<T>;
+type Status__526865885 = {#active; #revoked};
+type Status__666598387 = {#active; #revoked};
 {
   "20260920_000000" : (_old : OldActor__738888502) -> NewActor__991145740
 }
@@ -24,5 +76,15 @@ actor  {
   stable admins :
     {var root : Node__1005781198<Principal>; var size : Nat__920310729};
   stable bootstrap : {var closed : Bool};
+  stable issuer :
+    {
+      keys : Map__423296351<KeyId__350137800, IssuerKey__235430487>;
+      var nextId : KeyId__350137800
+    };
+  stable records :
+    {
+      var root : Node__579855337<Blob, Record__636117662>;
+      var size : Nat__920310729
+    };
   stable schema : Nat
 };

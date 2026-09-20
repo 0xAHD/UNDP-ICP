@@ -1,4 +1,5 @@
 import Set "mo:core/Set";
+import Map "mo:core/Map";
 import Principal "mo:core/Principal";
 
 /// Initial stable shape.
@@ -15,9 +16,30 @@ import Principal "mo:core/Principal";
 /// Self-contained by rule: only `mo:core` imports, both actor shapes inlined.
 module {
   type OldActor = {};
+  // Inlined by rule: migrations import only mo:core and never ../types, so
+  // the chain keeps replaying correctly even as the project's types change.
+  type KeyId = Nat;
+  type Date = Nat;
+  type KeyStatus = { #active; #retired; #compromised };
+  type IssuerKey = {
+    id : KeyId;
+    publicKey : Blob;
+    status : KeyStatus;
+    addedAt : Date;
+  };
+  type Status = { #active; #revoked };
+  type Record = {
+    status : Status;
+    statusChangedAt : Date;
+    issuerKeyId : KeyId;
+    signature : Blob;
+  };
+
   type NewActor = {
     admins : Set.Set<Principal>;
     bootstrap : { var closed : Bool };
+    issuer : { keys : Map.Map<KeyId, IssuerKey>; var nextId : KeyId };
+    records : Map.Map<Blob, Record>;
     schema : Nat;
   };
 
@@ -30,7 +52,10 @@ module {
       // is reached. Never reset to false.
       bootstrap = { var closed = false };
       // Bump whenever the stable shape above changes.
-      schema = 2;
+      // Issuer keys start empty; an admin adds the first one after bootstrap.
+      issuer = { keys = Map.empty(); var nextId = 0 };
+      records = Map.empty();
+      schema = 3;
     };
   };
 };

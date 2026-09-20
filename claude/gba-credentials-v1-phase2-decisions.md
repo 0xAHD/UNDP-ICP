@@ -14,6 +14,61 @@ session · **[PROPOSED]** my recommendation · **DECISION OWED** blocks Phase 2.
 
 ---
 
+## 0. MVP decisions — **DECIDED 2026-09-20**
+
+Ahmed: *"choose the easiest option for our MVP."* Taken as a decision, recorded
+here. Each is the simplest option that is still **correct**; none silently
+weakens a rule in `personal-data-on-chain.md`.
+
+| § | Decision | Why it is the easiest |
+|---|---|---|
+| **2** | `Status = {#active; #revoked}`; `Date` = **days since Unix epoch** (`Nat`), computed by the canister; **keep** `issuerKeyId` | No calendar maths (`Time.now() / 86_400_000_000_000`), canister-authoritative so no admin can backdate |
+| **3** | **Option C — issuer key off chain** | Removes threshold signing, the proxy, cycles and every `await`. **Keeps the OpenCloud engine as the target.** |
+| **5** | **Update-call `verify`** for v1 | No Merkle tree, no `ic-certification`/`sha2`, no certification plumbing. Consensus makes it trustworthy |
+| **6** | Mark a key compromised; **never** auto-invalidate its past signatures | A status change, no cascade logic |
+
+### Why C rather than B (this reverses the earlier recommendation)
+
+§3 previously recommended **B** (registry on mainnet, signing via `aaaaa-aa`).
+That was written for a production rail. For an MVP the answer changes, and C is
+both the easiest *and* the least permanent:
+
+- **C is the only option that is cleanly upgradeable.** The issuer key is just
+  data in the append-only key set, so moving to threshold signing later means
+  *adding a new issuer key and signing with it*. Credentials issued under the
+  old key stay verifiable. A and B bind the rail to an infrastructure choice; C
+  does not. This is precisely what append-only issuer keys are for.
+- **C keeps the stated target.** A needs a console proxy; B abandons the engine.
+  C needs neither — with no threshold signing there is no cross-subnet
+  cycle-bearing call, so the engine's constraints simply do not apply.
+- **C removes every `await` from the canister**, which also removes the TOCTOU
+  risk flagged in §7 and `../CLAUDE.md` §11. The MVP canister is fully
+  synchronous.
+
+**What C costs, stated plainly.** The issuer private key is held off chain, so
+it *can* be exfiltrated in a way a threshold key cannot. Verifiers trust our key
+management. The delta is smaller than it first looks — under A and B the admins
+control the canister and the controllers control the admins — but it is real.
+
+**Condition on this decision:** it is right if MVP credentials are a pilot. If
+the MVP will issue credentials that must stay authoritative for years, revisit
+§3 before the first issuance, because *that* is the moment the choice starts to
+matter.
+
+### What this means for the build
+
+The canister **does not sign**. An off-chain issuer signs the digest and submits
+`issue(digest, signature, issuerKeyId)`; the canister validates and stores. It
+also does not *verify* signatures — there is no Ed25519 verifier in `mo:core`,
+and verification belongs client-side anyway, against the issuer public key the
+canister returns. So:
+
+- no `lib/Signer.mo`, no `aaaaa-aa`, no cycles, no proxy
+- no async, no reentrancy surface
+- `verify` is an update call returning the record plus the issuer key
+
+---
+
 ## 1. Scope
 
 What `registry` gains in Phase 2:
@@ -25,7 +80,7 @@ What `registry` gains in Phase 2:
 
 ---
 
-## 2. The on-chain record — **DECISION OWED**
+## 2. The on-chain record — **DECIDED, see §0**
 
 **[RULE]** From the brief, the record is trimmed: **no `issuedAt`, no
 `expiresAt`**, and **`statusChangedAt` is a date**, not a timestamp.
@@ -73,7 +128,7 @@ Deliberately absent, each for a reason:
 
 ---
 
-## 3. Where the issuer key lives — **DECISION OWED, and permanent**
+## 3. Where the issuer key lives — **DECIDED: option C, see §0**
 
 **[VERIFIED]** Cloud engines provide **no threshold signing**. On an engine the
 call routes through the console proxy, and because `sign_with_schnorr` has no
@@ -126,7 +181,7 @@ root that must be re-set on every write.
 
 ---
 
-## 5. Certification granularity — **DECISION OWED**
+## 5. Certification granularity — **DECIDED: update-call verify, see §0**
 
 **[VERIFIED]** Certifying one 32-byte value works and needs no Merkle library.
 

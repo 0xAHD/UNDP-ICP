@@ -1,8 +1,88 @@
-type Result = 
+type VerifyReply = 
+ variant {
+   found: record {
+            credential: Record;
+            issuerKey: IssuerKey;
+          };
+   unknown;
+ };
+type Status = 
+ variant {
+   active;
+   revoked;
+ };
+type RevokeError = 
+ variant {
+   alreadyRevoked;
+   anonymousCaller;
+   notAuthorized;
+   unknownDigest;
+ };
+type Result_4 = 
+ variant {
+   err: KeyError;
+   ok: KeyId;
+ };
+type Result_3 = 
+ variant {
+   err: IssueError;
+   ok;
+ };
+type Result_2 = 
  variant {
    err: AccessError;
    ok;
  };
+type Result_1 = 
+ variant {
+   err: RevokeError;
+   ok;
+ };
+type Result = 
+ variant {
+   err: KeyError;
+   ok;
+ };
+type Record = 
+ record {
+   issuerKeyId: KeyId;
+   signature: blob;
+   status: Status;
+   statusChangedAt: Date;
+ };
+type KeyStatus = 
+ variant {
+   active;
+   compromised;
+   retired;
+ };
+type KeyId = nat;
+type KeyError = 
+ variant {
+   anonymousCaller;
+   badKeyLength;
+   duplicateKey;
+   notAuthorized;
+   unknownKey;
+ };
+type IssuerKey = 
+ record {
+   addedAt: Date;
+   id: KeyId;
+   publicKey: blob;
+   status: KeyStatus;
+ };
+type IssueError = 
+ variant {
+   anonymousCaller;
+   badDigestLength;
+   badSignatureLength;
+   duplicateDigest;
+   issuerKeyNotActive;
+   notAuthorized;
+   unknownIssuerKey;
+ };
+type Date = nat;
 type AccessError = 
  variant {
    adminFloor;
@@ -15,25 +95,48 @@ type AccessError =
  };
 service : {
   /// Admit a new admin. Requires an existing admin.
-  addAdmin: (who: principal) -> (Result);
+  addAdmin: (who: principal) -> (Result_2);
+  /// Add an Ed25519 issuer public key (32 bytes). Issuer keys are append-only.
+  addIssuerKey: (publicKey: blob) -> (Result_4);
   /// Number of principals currently holding admin rights.
   adminCount: () -> (nat) query;
   /// The floor this canister enforces. Compile-time constant by design.
   adminFloor: () -> (nat) query;
   /// Seed the admin set. Controller-only, and only until the two-admin floor
   /// is reached — after that this returns `#bootstrapClosed` forever.
-  bootstrapAdmin: (who: principal) -> (Result);
+  bootstrapAdmin: (who: principal) -> (Result_2);
   /// Has bootstrap latched shut? Once true this never goes back, even if
   /// the admin floor is later raised.
   bootstrapClosed: () -> (bool) query;
   /// Whether the calling principal holds admin rights.
   callerIsAdmin: () -> (bool) query;
+  /// How many credential records exist. Deliberately a count, not a listing —
+  /// there is no method to enumerate digests, so cohort membership cannot be
+  /// harvested from the chain.
+  credentialCount: () -> (nat) query;
+  /// Record a credential: its digest, which key signed it, and the signature.
+  /// Idempotent per digest — a duplicate is refused, never overwritten.
+  issue: (digest: blob, issuerKeyId: KeyId, signature: blob) -> (Result_3);
+  issuerKeyCount: () -> (nat) query;
+  /// The issuer key set, append-only. A verifier needs this to know which keys
+  /// were ever legitimate, and to see that a key is retired or compromised.
+  issuerKeys: () -> (vec IssuerKey) query;
   /// The current admin set. Public by design: these are governance
   /// principals, not participant data.
   listAdmins: () -> (vec principal) query;
   /// Remove an admin, never dropping below the two-admin floor.
-  removeAdmin: (who: principal) -> (Result);
+  removeAdmin: (who: principal) -> (Result_2);
+  /// Revoke a credential. The record stays; only its status changes.
+  revoke: (digest: blob) -> (Result_1);
   /// Schema version, set by the migration chain in `migrations/`.
   /// Bump it in the migration whenever the stable shape changes.
   schemaVersion: () -> (nat) query;
+  /// Retire or flag an issuer key. The key is never removed, so credentials it
+  /// already signed stay verifiable.
+  setIssuerKeyStatus: (id: KeyId, status: KeyStatus) -> (Result);
+  /// Verify a credential digest. Returns the record and the issuer key that
+  /// signed it, so the caller can check the signature client-side.
+  /// 
+  /// `#unknown` means no record for this digest — a valid answer, not an error.
+  verify: (digest: blob) -> (VerifyReply);
 }

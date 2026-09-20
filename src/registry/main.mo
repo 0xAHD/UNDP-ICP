@@ -1,8 +1,13 @@
 import Set "mo:core/Set";
 import Principal "mo:core/Principal";
 import SharedTypes "../shared/Types";
+import Map "mo:core/Map";
+import Blob "mo:core/Blob";
+import Types "types";
 import AdminApi "mixins/Admin";
 import MetaApi "mixins/Meta";
+import IssuanceApi "mixins/Issuance";
+import VerifyApi "mixins/Verify";
 
 /// UNDP AltFinLab Cohort Tracker — `registry` canister.
 ///
@@ -25,8 +30,18 @@ persistent actor {
   /// Latch recording that bootstrap has finished. See shared/Types.mo.
   let bootstrap : SharedTypes.BootstrapState;
 
+  /// Issuer public keys, APPEND-ONLY, plus the id counter. The private keys
+  /// are held OFF CHAIN — this canister never signs.
+  let issuer : Types.IssuerState;
+
+  /// Credential records, keyed by the digest of the credential document.
+  /// Holds no participant data: see types.mo.
+  let records : Map.Map<Blob, Types.Record>;
+
   let schema : Nat;
 
   include AdminApi(admins, bootstrap);
   include MetaApi(schema);
+  include IssuanceApi(admins, issuer, records);
+  include VerifyApi(issuer, records);
 };

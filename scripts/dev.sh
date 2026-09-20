@@ -4,7 +4,7 @@
 #   ./scripts/dev.sh reset    wipe local state, fresh install (schema changes)
 #   ./scripts/dev.sh seed     bootstrap admins up to the floor
 #   ./scripts/dev.sh up       upgrade in place, keeping state (compatible changes)
-#   ./scripts/dev.sh test     reset, then run the adversarial suite on both canisters
+#   ./scripts/dev.sh test     reset, adversarial suites, then the credential flow
 #   ./scripts/dev.sh status   canister IDs, schema versions, admin counts
 #   ./scripts/dev.sh down     stop the local network
 #
@@ -125,6 +125,10 @@ cmd_test() {
     hr; echo "==> ADVERSARIAL SUITE: $c"
     ./scripts/local-adversarial-test.sh "$c" || fail=1
   done
+  # The adversarial suites leave the admin set seeded at the floor, so the
+  # credential flow can run straight after without re-seeding.
+  hr; echo "==> CREDENTIAL FLOW (end-to-end, real Ed25519)"
+  node ./scripts/credential-flow-test.mjs || fail=1
   hr
   [[ $fail -eq 0 ]] && echo "ALL SUITES PASSED" || { echo "SUITE FAILURES"; return 1; }
 }

@@ -10,10 +10,16 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 ENV_NAME=local
-# Bump together with `schema` in the migration chain.
-EXPECT_SCHEMA=2
 CANISTER="${1:-registry}"
 PASS=0; FAIL=0
+
+# Expected stable-shape version per canister. Bump together with `schema` in
+# that canister's migration chain.
+case "$CANISTER" in
+  registry) EXPECT_SCHEMA=3 ;;   # + issuer keys and credential records
+  ops)      EXPECT_SCHEMA=2 ;;   # governance only
+  *)        EXPECT_SCHEMA=2 ;;
+esac
 
 A=$(icp identity principal --identity ct-admin-a 2>/dev/null | tail -1)
 B=$(icp identity principal --identity ct-admin-b 2>/dev/null | tail -1)
