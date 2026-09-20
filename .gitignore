@@ -1,0 +1,10 @@
+# icp-cli: ephemeral build cache. NEVER ignore .icp/ or .icp/data/ —
+# .icp/data/mappings/<env>.ids.json is the canister-name -> canister-ID map,
+# and for `registry` that ID is the permanent credential DID.
+.icp/cache/
+
+# mops: downloaded packages and build output
+.mops/
+
+# Motoko build artifacts
+*.wasm

@@ -1,0 +1,31 @@
+type Result = 
+ variant {
+   err: AccessError;
+   ok;
+ };
+type AccessError = 
+ variant {
+   adminFloor;
+   alreadyAdmin;
+   anonymousCaller;
+   bootstrapClosed;
+   notAuthorized;
+   unknownAdmin;
+ };
+service : {
+  /// Admit a new admin. Requires an existing admin.
+  addAdmin: (who: principal) -> (Result);
+  adminCount: () -> (nat) query;
+  /// The floor this canister enforces.
+  adminFloor: () -> (nat) query;
+  /// Seed the admin set. Controller-only, and only until the admin floor
+  /// is reached — after that this returns `#bootstrapClosed` forever.
+  bootstrapAdmin: (who: principal) -> (Result);
+  /// Whether the calling principal holds admin rights.
+  callerIsAdmin: () -> (bool) query;
+  /// The current admin set. Public by design: these are governance
+  /// principals, not participant data.
+  listAdmins: () -> (vec principal) query;
+  /// Remove an admin, never dropping below the configured admin floor.
+  removeAdmin: (who: principal) -> (Result);
+}

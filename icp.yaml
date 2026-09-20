@@ -1,0 +1,24 @@
+# UNDP AltFinLab Cohort Tracker — RAW ICP track.
+#
+# LOCAL ONLY at this phase. No engine or mainnet environment is defined here
+# on purpose: deploying the `registry` canister mints its permanent credential
+# DID, and that step is gated on a second controller being in place.
+# See CLAUDE.md, "Deploy gate".
+
+canisters:
+  - name: ops
+    recipe:
+      type: "@dfinity/motoko@v5.1.0"
+
+  - name: registry
+    recipe:
+      type: "@dfinity/motoko@v5.1.0"
+
+networks:
+  - name: local
+    mode: managed
+
+environments:
+  - name: local
+    network: local
+    canisters: [ops, registry]

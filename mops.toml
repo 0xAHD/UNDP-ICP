@@ -1,0 +1,28 @@
+[dependencies]
+core = "2.6.2"
+
+[canisters.ops]
+main = "src/ops/main.mo"
+candid = "src/ops/ops.did"
+
+[canisters.ops.migrations]
+chain = "src/ops/migrations"
+
+[canisters.ops.check-stable]
+path = "deployed/ops.most"
+
+[canisters.registry]
+main = "src/registry/main.mo"
+candid = "src/registry/registry.did"
+
+[canisters.registry.migrations]
+chain = "src/registry/migrations"
+
+[canisters.registry.check-stable]
+path = "deployed/registry.most"
+
+[moc]
+args = [ "-W", "M0236,M0237,M0223" ]
+
+[toolchain]
+moc = "1.16.1"

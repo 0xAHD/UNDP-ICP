@@ -1,0 +1,21 @@
+// Version: 4.0.0
+type Data__838833191<T> = {var count : Nat__920310729; elements : [var ?T]};
+type Internal__493296107<T> =
+  {children : [var ?Node__1005781198<T>]; data : Data__838833191<T>};
+type Leaf__178727986<T> = {data : Data__838833191<T>};
+type Nat__920180692 = Nat;
+type Nat__920310729 = Nat__920180692;
+type NewActor__848866106 = {admins : Set__741069794<Principal>};
+type Node__1005781198<T> =
+  {#internal : Internal__493296107<T>; #leaf : Leaf__178727986<T>};
+type OldActor__938247123 = {};
+type Set__72989423<T> =
+  {var root : Node__1005781198<T>; var size : Nat__920310729};
+type Set__741069794<T> = Set__72989423<T>;
+{
+  "20260920_000000" : (_old : OldActor__938247123) -> NewActor__848866106
+}
+actor  {
+  stable admins :
+    {var root : Node__1005781198<Principal>; var size : Nat__920310729}
+};
