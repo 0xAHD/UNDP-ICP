@@ -399,3 +399,19 @@ and re-check authorisation *after* the await before committing state.
   scaffold was run that way.
 - A sandbox that blocks `api.github.com` cannot auto-fetch the local network
   launcher; set `ICP_CLI_NETWORK_LAUNCHER_PATH` to a manually staged binary.
+
+### Git identity
+
+Commits must attribute to **0xAHD**, the account that owns this repo:
+
+```bash
+git config user.name  "0xAHD"
+git config user.email "109051785+0xAHD@users.noreply.github.com"
+```
+
+**GitHub attributes by email, not by the name string.** `alhadded.ahmed@gmail.com`
+is bound to a different account (`Pinkofsky`, id 107201934), so commits authored
+with it show up there however the name field reads — and a verified email can
+only belong to one GitHub account, so it cannot simply be added to `0xAHD` as
+well. Use the noreply address above. A fresh container defaults to
+`Claude <noreply@anthropic.com>`; set this before the first commit.
