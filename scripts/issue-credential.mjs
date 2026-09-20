@@ -13,11 +13,34 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { digestOf, toHex } from "../shared-js/credential.mjs";
+import QRCode from "qrcode";
+import { digestOf, toHex, canonicalBytes } from "../shared-js/credential.mjs";
 
 const ENV = "local", CAN = "registry", IDENT = process.env.IDENTITY ?? "ct-admin-a";
 const KEYFILE = ".issuer-key.json";
 const OUTDIR = "credentials";
+
+/// Where the verification page lives. Looked up from the deployed canister so
+/// the link works without hardcoding an id.
+function pageOrigin() {
+  if (process.env.VERIFY_PAGE_URL) return process.env.VERIFY_PAGE_URL.replace(/\/$/, "");
+  try {
+    const id = execFileSync("icp", ["canister", "status", "verify_page", "-e", ENV, "--identity", IDENT],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, DO_NOT_TRACK: "1" } })
+      .match(/Canister Id:\s*(\S+)/)?.[1];
+    return id ? `http://${id}.localhost:8000` : null;
+  } catch { return null; }
+}
+
+/// The document rides in the URL FRAGMENT, which browsers never send to a
+/// server — so the holder's name never leaves their machine when a verifier
+/// opens the link.
+function verifyLink(doc) {
+  const origin = pageOrigin();
+  if (!origin) return null;
+  const b64 = Buffer.from(canonicalBytes(doc)).toString("base64url");
+  return `${origin}/#${b64}`;
+}
 
 const icp = (method, args) => {
   try {
@@ -84,7 +107,18 @@ if (cmd === "issue") {
   fs.writeFileSync(file, JSON.stringify(doc, null, 2) + "\n");
   console.log(`issued  : ${holder} / ${cohort} / ${role}`);
   console.log(`digest  : ${toHex(digest)}`);
-  console.log(`document: ${file}   <- give this to the holder`);
+  console.log(`document: ${file}`);
+
+  const link = verifyLink(doc);
+  if (link) {
+    const qrFile = path.join(OUTDIR, `${doc.credentialId}.qr.svg`);
+    fs.writeFileSync(qrFile, await QRCode.toString(link, { type: "svg", margin: 1 }));
+    console.log(`\nGive the holder either of these — no JSON, no pasting:`);
+    console.log(`  link : ${link}`);
+    console.log(`  qr   : ${qrFile}   <- for showing on a phone, in person`);
+  } else {
+    console.log(`\n(verify_page not deployed — no link generated)`);
+  }
   process.exit(0);
 }
 

@@ -49,17 +49,9 @@ function verdict(kind, mark, title, detail) {
 const checkLine = (ok, text) =>
   `<li class="${ok ? "pass" : "fail"}"><span>${ok ? "✓" : "✗"}</span><span>${esc(text)}</span></li>`;
 
-async function verify() {
+async function verify(doc) {
   const out = $("result");
-  const status = $("status");
-  out.innerHTML = "";
-  status.textContent = "verifying…";
-  $("go").disabled = true;
   try {
-    let doc;
-    try { doc = JSON.parse($("doc").value); }
-    catch { throw new Error("That is not valid JSON."); }
-
     // Hash locally, in canonical form. A different field order or a stray
     // field changes the digest, so canonicalBytes refuses both.
     const digest = await digestOf(doc);
@@ -119,15 +111,82 @@ async function verify() {
       </ul></div>`;
   } catch (e) {
     out.innerHTML = verdict("bad", "!", "Could not verify", e.message ?? String(e));
-  } finally {
-    status.textContent = "";
-    $("go").disabled = false;
   }
 }
 
-$("go").addEventListener("click", verify);
-$("sample").addEventListener("click", async () => {
-  const r = await fetch("./example-credential.json").catch(() => null);
-  if (r?.ok) $("doc").value = JSON.stringify(await r.json(), null, 2);
-  else $("status").textContent = "no example available";
+// ---- entry points -------------------------------------------------------
+// A credential link carries the document in the URL FRAGMENT. Browsers never
+// send the fragment to the server, so the holder's name stays in the browser.
+function docFromHash() {
+  const raw = location.hash.replace(/^#/, "").trim();
+  if (!raw) return null;
+  try {
+    const json = new TextDecoder().decode(
+      Uint8Array.from(atob(raw.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0)),
+    );
+    return JSON.parse(json);
+  } catch {
+    return undefined; // present but unreadable — distinct from absent
+  }
+}
+
+function showInput(show) {
+  $("input").classList.toggle("hidden", !show);
+}
+
+async function verifyDoc(doc) {
+  showInput(false);
+  $("result").innerHTML = '<div class="spin">Verifying…</div>';
+  await verify(doc);
+}
+
+async function run() {
+  const fromLink = docFromHash();
+  if (fromLink === undefined) {
+    $("result").innerHTML = verdict("bad", "!", "Broken credential link",
+      "The link is damaged or incomplete. Ask for it again, or drop the credential file below.");
+    showInput(true);
+    return;
+  }
+  if (fromLink) { await verifyDoc(fromLink); return; }
+  showInput(true);
+}
+
+// paste fallback
+$("go").addEventListener("click", async () => {
+  let doc;
+  try { doc = JSON.parse($("doc").value); }
+  catch {
+    $("result").innerHTML = verdict("bad", "!", "Could not verify", "That is not valid JSON.");
+    return;
+  }
+  await verifyDoc(doc);
 });
+
+// file picker + drag and drop
+const readFile = async (file) => {
+  try { return JSON.parse(await file.text()); }
+  catch {
+    $("result").innerHTML = verdict("bad", "!", "Could not read that file",
+      "It does not look like a credential document.");
+    return null;
+  }
+};
+$("pick").addEventListener("click", () => $("file").click());
+$("file").addEventListener("change", async (e) => {
+  const f = e.target.files?.[0]; if (!f) return;
+  const doc = await readFile(f); if (doc) await verifyDoc(doc);
+});
+const drop = $("drop");
+["dragenter", "dragover"].forEach((ev) =>
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((ev) =>
+  drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", async (e) => {
+  const f = e.dataTransfer?.files?.[0]; if (!f) return;
+  const doc = await readFile(f); if (doc) await verifyDoc(doc);
+});
+
+// re-verify if the user opens a different credential link in the same tab
+addEventListener("hashchange", run);
+run();

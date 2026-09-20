@@ -166,9 +166,16 @@ Served by the `verify_page` canister (`@dfinity/static-site`), so the browser
 gets the root key and canister ids from the `ic_env` cookie — no
 `fetchRootKey()`, no environment branching (canister-security pitfall 7).
 
+**How a verifier uses it.** The holder is given a **link** (or a QR of that
+link), not a file to paste. Opening the link verifies immediately, with no
+interaction. The document rides in the URL **fragment** (`#…`), which browsers
+never send to any server — so the holder's name stays in the verifier's browser
+and never reaches the asset canister, a boundary node, or a log. Dropping the
+`.json` file and pasting still work as fallbacks.
+
 What it does, all client-side:
 
-1. Hashes the pasted document locally, in canonical form
+1. Hashes the document locally, in canonical form
    (`shared-js/credential.mjs`) — only the digest leaves the browser.
 2. Calls `verify(digest)` — an update call, so the answer carries consensus.
 3. Checks the Ed25519 signature against the issuer key the registry returned.

@@ -256,8 +256,11 @@ output**. Never claim a build or test passed without having run it this session.
 - upgrade/migration test (state survives; the chain does not re-run)
 - Candid diff against the committed `src/*/**.did`
 - the verification page driven in a real browser against the local replica
-  (`scripts/shoot-verify-page.mjs`) — **done 2026-09-20**: valid, revoked and
-  tampered verdicts all confirmed
+  (`scripts/shoot-link.mjs`, `scripts/shoot-verify-page.mjs`) — **done
+  2026-09-20**: valid, revoked, tampered, broken-link and landing states all
+  confirmed. Credential links put the document in the URL **fragment**, which
+  browsers never send to a server — keep it that way; a query param would leak
+  the holder's name to the gateway.
 
 Spike results that change the gate (`spikes/FINDINGS.md`): the certified-query
 path verifies end to end locally, and **certified data survives a canister

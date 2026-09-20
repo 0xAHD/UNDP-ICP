@@ -1,0 +1,10 @@
+{
+  "name": "cohort-tracker-dev-tooling",
+  "private": true,
+  "type": "module",
+  "description": "Dev-only tooling for the Cohort Tracker: issuer CLI and page driver. Not part of any canister build.",
+  "devDependencies": {
+    "playwright": "^1.56.1",
+    "qrcode": "^1.5.4"
+  }
+}
