@@ -129,6 +129,8 @@ cmd_test() {
   # credential flow can run straight after without re-seeding.
   hr; echo "==> OPS COHORTS + COMPLETION RULES"
   ./scripts/ops-cohorts-test.sh || fail=1
+  hr; echo "==> OFF-CHAIN STORE + ELIGIBILITY"
+  node ./scripts/store-test.mjs || fail=1
   hr; echo "==> CREDENTIAL FLOW (end-to-end, real Ed25519)"
   node ./scripts/credential-flow-test.mjs || fail=1
   # The page is the product surface — a break there matters as much as a

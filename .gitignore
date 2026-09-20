@@ -17,3 +17,6 @@ node_modules/
 credentials/
 verify-page/node_modules/
 verify-page/dist/
+
+# local participant store — PERSONAL DATA, never commit
+participants.json

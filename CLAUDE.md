@@ -206,8 +206,19 @@ Blocked on Ahmed's decisions. **Do not model or implement these:**
   closes. Participant progress stays entirely off chain.
   Adding participant records later needs a UNDP ruling **and** a k-anonymity
   assessment; it is an additive migration, and it is not reversible.
-- **Which off-chain store holds participant names** — still open, but no longer
-  blocking: nothing on chain references a participant.
+- **Which off-chain store holds participant names** — **SharePoint decided**
+  (Ahmed: "we use Microsoft"), but credentials do not exist yet. Built against
+  a store interface (`store/`) with three adapters so this is a config change:
+  `local` (JSON, dev/tests, **fully tested**), `sharepoint` (Graph — the
+  target, **UNVERIFIED**, no tenant credentials yet), `google` (Sheets —
+  backup, **UNVERIFIED**). Eligibility and issuance are store-agnostic and are
+  tested via the local adapter.
+  SharePoint was chosen because it needs no procurement or new data-processing
+  agreement and sits inside the tenant's retention/DLP boundary — which matters
+  more here than the technology. Google Sheets sits OUTSIDE that boundary; say
+  so to whoever owns the data before falling back to it.
+  **To finish it:** an Entra app registration (`Sites.Selected` preferred),
+  the site + list id, and whether it runs as a service or a signed-in person.
 - ~~**`registry` credential logic (GBA Phase 2)**~~ — **BUILT 2026-09-20** as
   the MVP, per the decisions in `claude/gba-credentials-v1-phase2-decisions.md`
   §0. Issuer key is **off chain** (option C), so there is no `lib/Signer.mo`,
@@ -312,8 +323,9 @@ assumptions in `phase2-decisions` remain untested because that document is
 still missing.
 
 `./scripts/dev.sh test` runs reset + the governance suites on both canisters
-(34 each) + ops cohorts and completion rules (28) + the end-to-end credential
-flow (28) + the verification page in a real browser (14) — **138 in total**. The page is in the gate deliberately: it
+(34 each) + ops cohorts and completion rules (28) + the off-chain store and
+eligibility (16) + the end-to-end credential flow (28) + the verification page
+in a real browser (14) — **154 in total**. The page is in the gate deliberately: it
 is the product surface, so a break there matters as much as a canister break.
 
 **CI** (`.github/workflows/ci.yml`) runs the same thing on every push: a fast
@@ -345,6 +357,9 @@ src/<canister>/
 
 shared-js/             canonical credential format — ONE source of truth for
                        the issuer and the page, so they cannot drift
+store/                 off-chain participant store (PERSONAL DATA LIVES HERE,
+                       never on chain) behind one interface: local /
+                       sharepoint / google adapters
 verify-page/           public verification page (static-site canister)
 scripts/               dev loop, adversarial suite, issuer tool, page driver
 ```
