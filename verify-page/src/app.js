@@ -42,12 +42,14 @@ async function getActor() {
   return actor;
 }
 
-function verdict(kind, mark, title, detail) {
-  return `<div class="verdict v-${kind}"><div class="mark">${mark}</div>
+// Status is never colour alone — the dot always sits beside a text label.
+function verdict(kind, _mark, title, detail) {
+  return `<div class="verdict v-${kind}"><span class="dot" aria-hidden="true"></span>
     <div><h2>${esc(title)}</h2><p>${esc(detail)}</p></div></div>`;
 }
 const checkLine = (ok, text) =>
-  `<li class="${ok ? "pass" : "fail"}"><span>${ok ? "✓" : "✗"}</span><span>${esc(text)}</span></li>`;
+  `<li class="${ok ? "ok" : "no"}"><span class="mark" aria-hidden="true">${ok ? "\u2713" : "\u2715"}</span>` +
+  `<span>${esc(text)}</span></li>`;
 
 async function verify(doc) {
   const out = $("result");
@@ -59,7 +61,7 @@ async function verify(doc) {
 
     if ("unknown" in reply) {
       out.innerHTML = verdict("bad", "✗", "Not a known credential",
-        "No record exists for this document. It was never issued, or it has been altered.")
+        "The registry holds no record for this digest. The document was either never issued, or it has been altered since issue.")
         + `<div class="card"><dl><dt>Digest</dt><dd><code>${toHex(digest)}</code></dd></dl></div>`;
       return;
     }
@@ -77,37 +79,38 @@ async function verify(doc) {
     let head;
     if (!sigOk) {
       head = verdict("bad", "✗", "Signature does not match",
-        "A record exists, but the signature does not verify against the issuer key. Do not trust this document.");
+        "A record exists for this digest, but the signature does not verify against the issuer key. This document should not be relied upon.");
     } else if (revoked) {
       head = verdict("bad", "✗", "Revoked",
-        `This credential was genuinely issued but was revoked on ${changed}.`);
+        `This credential was issued by a registered issuer and subsequently revoked on ${changed}.`);
     } else if (keyState === "compromised") {
       head = verdict("warn", "!", "Valid, but the issuer key is marked compromised",
-        "The signature checks out and the credential is not revoked, but its issuer key has been flagged. Treat with caution.");
+        "The signature verifies and the credential is not revoked, but the issuing key has been marked compromised. Confirm with the issuing office before relying on it.");
     } else {
       head = verdict("ok", "✓", "Valid credential",
-        "The signature verifies against a registered issuer key and the credential has not been revoked.");
+        "The signature verifies against a registered issuer key, and the credential has not been revoked.");
     }
 
+    const row = (k, v) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`;
     out.innerHTML = head + `<div class="card">
-      <dl>
-        <dt>Holder</dt><dd>${esc(doc.holder ?? "—")}</dd>
-        <dt>Cohort</dt><dd>${esc(doc.cohort ?? "—")}</dd>
-        <dt>Role</dt><dd>${esc(doc.role ?? "—")}</dd>
-        <dt>Outcome</dt><dd>${esc(doc.outcome ?? "—")}</dd>
-        <dt>Issued on</dt><dd>${esc(doc.issuedOn ?? "—")}</dd>
-        <dt>Status</dt><dd>${revoked ? "revoked" : "active"} (since ${esc(changed)})</dd>
-        <dt>Issuer key</dt><dd>#${issuerKey.id} — ${esc(keyState)}<br><code>${toHex(pub)}</code></dd>
-        <dt>Digest</dt><dd><code>${toHex(digest)}</code></dd>
+      <dl class="detail">
+        ${row("Holder", esc(doc.holder ?? "\u2014"))}
+        ${row("Cohort", esc(doc.cohort ?? "\u2014"))}
+        ${row("Role", esc(doc.role ?? "\u2014"))}
+        ${row("Outcome", esc(doc.outcome ?? "\u2014"))}
+        ${row("Issued on", esc(doc.issuedOn ?? "\u2014"))}
+        ${row("Status", `${revoked ? "Revoked" : "Active"} since ${esc(changed)}`)}
+        ${row("Issuer key", `Key ${issuerKey.id} \u2014 ${esc(keyState)}<br><span class="mono">${toHex(pub)}</span>`)}
+        ${row("Digest", `<span class="mono">${toHex(digest)}</span>`)}
       </dl>
       <ul class="checks">
         ${checkLine(true, "Document hashed locally in canonical form")}
-        ${checkLine(true, "Registry holds a record for this digest")}
+        ${checkLine(true, "The registry holds a record for this digest")}
         ${checkLine(sigOk, sigOk ? "Ed25519 signature verifies against the issuer key"
-                                 : "Ed25519 signature does NOT verify")}
+                                 : "Ed25519 signature does not verify")}
         ${checkLine(!revoked, revoked ? `Revoked on ${changed}` : "Not revoked")}
         ${checkLine(keyState !== "compromised", keyState === "compromised"
-            ? "Issuer key is marked COMPROMISED" : `Issuer key is ${keyState}`)}
+            ? "Issuer key is marked compromised" : `Issuer key is ${keyState}`)}
       </ul></div>`;
   } catch (e) {
     out.innerHTML = verdict("bad", "!", "Could not verify", e.message ?? String(e));
@@ -136,7 +139,7 @@ function showInput(show) {
 
 async function verifyDoc(doc) {
   showInput(false);
-  $("result").innerHTML = '<div class="spin">Verifying…</div>';
+  $("result").innerHTML = '<div class="waiting">Checking the registry\u2026</div>';
   await verify(doc);
 }
 
@@ -144,7 +147,7 @@ async function run() {
   const fromLink = docFromHash();
   if (fromLink === undefined) {
     $("result").innerHTML = verdict("bad", "!", "Broken credential link",
-      "The link is damaged or incomplete. Ask for it again, or drop the credential file below.");
+      "The credential link is incomplete or damaged. Request it again, or supply the credential file below.");
     showInput(true);
     return;
   }
@@ -157,7 +160,7 @@ $("go").addEventListener("click", async () => {
   let doc;
   try { doc = JSON.parse($("doc").value); }
   catch {
-    $("result").innerHTML = verdict("bad", "!", "Could not verify", "That is not valid JSON.");
+    $("result").innerHTML = verdict("bad", "!", "Could not verify", "The text supplied is not valid JSON.");
     return;
   }
   await verifyDoc(doc);
@@ -168,7 +171,7 @@ const readFile = async (file) => {
   try { return JSON.parse(await file.text()); }
   catch {
     $("result").innerHTML = verdict("bad", "!", "Could not read that file",
-      "It does not look like a credential document.");
+      "The file is not a valid credential document.");
     return null;
   }
 };

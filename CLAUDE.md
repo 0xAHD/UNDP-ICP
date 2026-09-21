@@ -360,7 +360,14 @@ shared-js/             canonical credential format — ONE source of truth for
 store/                 off-chain participant store (PERSONAL DATA LIVES HERE,
                        never on chain) behind one interface: local /
                        sharepoint / google adapters
-verify-page/           public verification page (static-site canister)
+verify-page/           public verification page (static-site canister).
+                       Follows the UNDP design system: UN Blue #009edb as the
+                       only accent, Roboto, kickers, no rounded corners, no
+                       shadows, no gradients, British English, status shown as
+                       a dot PLUS a text label (never colour alone).
+                       Fonts are SELF-HOSTED — a third-party font request would
+                       tell that party someone opened a credential, which
+                       contradicts the page's own claim.
 scripts/               dev loop, adversarial suite, issuer tool, page driver
 ```
 

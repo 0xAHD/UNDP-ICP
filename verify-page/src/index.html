@@ -4,92 +4,147 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:,">
-<title>Verify a credential — UNDP AltFinLab Cohort Tracker</title>
+<title>Verify a credential — UNDP AltFinLab</title>
+<!-- Self-hosted. No third-party font request: it would tell Google that
+     someone opened a credential, which contradicts the whole page. -->
+<link rel="stylesheet" href="./fonts.css">
 <style>
   :root{
-    --bg:#f7f7f5; --fg:#1c1c1a; --muted:#6b6b66; --line:#dcdcd6;
-    --card:#fff; --ok:#1e7a4b; --okbg:#e7f4ed; --bad:#a3231f; --badbg:#fbeceb;
-    --warn:#8a6100; --warnbg:#fdf3e0; --accent:#0b5cab; --dropbg:#eef4fb;
+    --un-blue:#009edb; --un-blue-dark:#0072bc; --un-blue-soft:#b3e0f2;
+    --ink:#1a1a1a; --ink-soft:#4a4a4a; --muted:#767676; --rule:#d1d5db;
+    --paper:#ffffff; --paper-soft:#f5f7fa;
+    --success:#007749; --warning:#e5a70c; --danger:#cf1725;
   }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --bg:#141413; --fg:#eeeeec; --muted:#a0a09a; --line:#33332f;
-      --card:#1e1e1c; --ok:#6cc294; --okbg:#14301f; --bad:#e88a86; --badbg:#3a1a19;
-      --warn:#e0b25f; --warnbg:#332713; --accent:#7fb3f0; --dropbg:#1623310;
-    }
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);
-    font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  .wrap{max-width:720px;margin:0 auto;padding:40px 16px 64px}
-  h1{font-size:1.5rem;margin:0 0 4px}
-  .sub{color:var(--muted);margin:0 0 28px;font-size:.93rem}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px}
-  .drop{border:2px dashed var(--line);border-radius:12px;padding:30px 20px;text-align:center;
-    background:var(--card);transition:background .15s,border-color .15s}
-  .drop.over{border-color:var(--accent);background:var(--dropbg)}
-  .drop h2{margin:0 0 6px;font-size:1rem}
-  .drop p{margin:0;color:var(--muted);font-size:.88rem}
-  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;align-items:center;justify-content:center}
-  button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:10px 18px;
-    font-size:.95rem;font-weight:600;cursor:pointer}
-  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  textarea{width:100%;min-height:130px;margin-top:12px;padding:12px;border:1px solid var(--line);
-    border-radius:8px;background:var(--bg);color:var(--fg);
-    font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
-  details{margin-top:10px} summary{cursor:pointer;color:var(--accent);font-size:.88rem}
-  .verdict{display:flex;gap:12px;align-items:flex-start;border-radius:10px;padding:16px;margin-bottom:16px}
-  .verdict .mark{font-size:1.4rem;line-height:1.2}
-  .verdict h2{margin:0 0 2px;font-size:1.05rem}
-  .verdict p{margin:0;font-size:.9rem;opacity:.9}
-  .v-ok{background:var(--okbg);color:var(--ok)}
-  .v-bad{background:var(--badbg);color:var(--bad)}
-  .v-warn{background:var(--warnbg);color:var(--warn)}
-  dl{display:grid;grid-template-columns:150px 1fr;gap:8px 14px;margin:0;font-size:.9rem}
-  dt{color:var(--muted)} dd{margin:0;overflow-wrap:anywhere}
-  code{font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
-  .checks{list-style:none;padding:0;margin:14px 0 0;font-size:.88rem}
-  .checks li{padding:5px 0;border-top:1px solid var(--line);display:flex;gap:9px}
-  .checks li:first-child{border-top:0}
-  .pass{color:var(--ok)} .fail{color:var(--bad)}
-  .spin{color:var(--muted);font-size:.9rem;text-align:center;padding:26px}
-  .note{font-size:.82rem;color:var(--muted);margin-top:22px;border-top:1px solid var(--line);padding-top:14px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--ink);background:var(--paper);font-size:15px;line-height:1.6}
+
+  /* Header band */
+  .masthead{background:var(--un-blue);color:#fff}
+  .masthead .inner{max-width:1080px;margin:0 auto;padding:18px 48px;
+    display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  .masthead .org{font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase}
+  .masthead .unit{font-size:13px;font-weight:400;opacity:.9}
+
+  .wrap{max-width:720px;margin:0 auto;padding:48px}
+  .kicker{font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--un-blue);margin-bottom:8px}
+  h1{font-size:32px;line-height:1.2;letter-spacing:-.01em;font-weight:700}
+  h2{font-size:24px;line-height:1.3;font-weight:500}
+  .lede{color:var(--ink-soft);margin-top:12px;max-width:62ch}
+  .band{margin-top:48px}
+
+  .card{background:var(--paper);border:1px solid var(--rule);padding:24px}
+  /* Keep the verdict and the detail card from doubling their shared border. */
+  .verdict + .card{margin-top:24px}
+
+  /* Verdict — status is never colour alone; a dot is always paired with text */
+  .verdict{border:1px solid var(--rule);border-left:4px solid var(--rule);padding:24px;
+    display:flex;gap:16px;align-items:flex-start}
+  .verdict .dot{width:10px;height:10px;flex:0 0 10px;margin-top:8px;background:var(--muted)}
+  .verdict h2{font-size:20px}
+  .verdict p{color:var(--ink-soft);margin-top:4px;font-size:14px}
+  .v-ok{border-left-color:var(--success)}      .v-ok .dot{background:var(--success)}
+  .v-ok h2{color:var(--success)}
+  .v-bad{border-left-color:var(--danger)}      .v-bad .dot{background:var(--danger)}
+  .v-bad h2{color:var(--danger)}
+  .v-warn{border-left-color:var(--warning)}    .v-warn .dot{background:var(--warning)}
+  .v-warn h2{color:var(--warning)}
+
+  /* Detail table — bottom borders only, no zebra */
+  dl.detail{margin-top:24px;border-top:1px solid var(--rule)}
+  dl.detail>div{display:grid;grid-template-columns:180px 1fr;gap:16px;
+    padding:12px 0;border-bottom:1px solid var(--rule)}
+  dl.detail dt{color:var(--muted);font-size:13px}
+  dl.detail dd{font-size:14px;overflow-wrap:anywhere}
+  .mono{font-family:'Roboto Mono',ui-monospace,monospace;font-size:12px;color:var(--ink-soft)}
+
+  .checks{list-style:none;margin-top:24px}
+  .checks li{display:grid;grid-template-columns:20px 1fr;gap:12px;align-items:start;
+    padding:10px 0;border-bottom:1px solid var(--rule);font-size:14px}
+  .checks li:last-child{border-bottom:0}
+  .checks .mark{font-weight:500}
+  .checks .ok .mark{color:var(--success)}
+  .checks .no .mark{color:var(--danger)}
+  .checks .no span:last-child{color:var(--danger)}
+
+  /* Input */
+  .drop{border:1px dashed var(--rule);background:var(--paper-soft);padding:48px 24px;text-align:center}
+  .drop.over{border-color:var(--un-blue);background:#eef7fc}
+  .drop h2{font-size:18px;font-weight:500}
+  .drop p{color:var(--muted);font-size:13px;margin-top:8px}
+  .actions{margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  button{border:none;padding:12px 24px;font-family:inherit;font-size:12px;font-weight:500;
+    letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .15s}
+  .btn-primary{background:var(--un-blue);color:#fff}
+  .btn-primary:hover{background:var(--un-blue-dark)}
+  .btn-secondary{background:transparent;color:var(--un-blue);border:1px solid var(--un-blue)}
+  .btn-secondary:hover{background:var(--un-blue);color:#fff}
+  button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:2px solid var(--un-blue);outline-offset:2px}
+  details{margin-top:24px;text-align:left}
+  summary{cursor:pointer;color:var(--un-blue);font-size:13px;font-weight:500}
+  label{display:block;font-weight:500;font-size:13px;margin:16px 0 8px}
+  textarea{width:100%;min-height:140px;padding:12px;border:1px solid var(--rule);border-radius:2px;
+    background:var(--paper);color:var(--ink);font-family:'Roboto Mono',monospace;font-size:13px;resize:vertical}
+  textarea:focus{outline:2px solid var(--un-blue);outline-offset:0}
+
+  .waiting{color:var(--muted);font-size:14px;padding:32px 0;text-align:center}
+  .note{margin-top:48px;padding-top:24px;border-top:1px solid var(--rule);
+    font-size:13px;color:var(--muted)}
   .hidden{display:none}
-  @media(max-width:560px){dl{grid-template-columns:1fr}dt{margin-top:6px}}
+
+  @media(max-width:640px){
+    .wrap{padding:32px 16px}
+    .masthead .inner{padding:16px}
+    h1{font-size:26px}
+    dl.detail>div{grid-template-columns:1fr;gap:4px}
+    .drop{padding:32px 16px}
+  }
 </style>
 </head>
 <body>
+<header class="masthead">
+  <div class="inner">
+    <span class="org">United Nations Development Programme</span>
+    <span class="unit">AltFinLab — Cohort Tracker</span>
+  </div>
+</header>
+
 <div class="wrap">
+  <p class="kicker">Credential verification</p>
   <h1>Verify a credential</h1>
-  <p class="sub">UNDP AltFinLab — Cohort Tracker</p>
+  <p class="lede">
+    Checks are performed in this browser against the Internet Computer. The credential
+    document is not uploaded and is not sent to any server.
+  </p>
 
-  <div id="result"></div>
+  <div class="band" id="result"></div>
 
-  <!-- Hidden when the page is opened from a credential link: the document is
-       already in the URL fragment, so there is nothing to ask for. -->
-  <div id="input">
+  <!-- Hidden when opened from a credential link: the document is already in the
+       URL fragment, so there is nothing to ask for. -->
+  <div class="band" id="input">
     <div class="drop" id="drop">
       <h2>Drop the credential file here</h2>
-      <p>or choose it below — nothing is uploaded, the file is read in your browser</p>
-      <div class="row">
-        <button id="pick">Choose file…</button>
+      <p>The file is read in this browser. Nothing is uploaded.</p>
+      <div class="actions">
+        <button id="pick" class="btn-primary">Choose file</button>
         <input id="file" type="file" accept=".json,application/json" class="hidden">
       </div>
       <details>
-        <summary>paste it instead</summary>
-        <textarea id="doc" spellcheck="false" placeholder='{ "v": 1, "credentialId": "…" }'></textarea>
-        <div class="row"><button id="go" class="ghost">Verify pasted text</button></div>
+        <summary>Paste the document instead</summary>
+        <label for="doc">Credential document (JSON)</label>
+        <textarea id="doc" spellcheck="false"></textarea>
+        <div class="actions"><button id="go" class="btn-secondary">Verify</button></div>
       </details>
     </div>
   </div>
 
   <p class="note">
-    Verification happens <strong>in your browser</strong>. The document is hashed locally
-    and only its digest is sent. When you open a credential link, the document travels in
-    the part of the URL after <code>#</code>, which browsers never send to any server.
-    The signature is checked against the issuer key the registry returns — you are trusting
-    the Internet Computer's consensus, not this website.
+    The document is hashed locally and only the resulting digest is sent. When a
+    credential link is opened, the document travels in the part of the URL after
+    the hash symbol, which browsers do not transmit to any server. The signature is
+    checked against the issuer key held by the registry, so verification relies on
+    the network's consensus rather than on this website.
   </p>
 </div>
 <script type="module" src="./app.js"></script>
