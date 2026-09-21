@@ -6,11 +6,15 @@ import path from "node:path";
 // that nothing reaches a server should not make every verifier's browser call
 // a third party — that request alone would reveal that they opened a
 // credential. Self-hosting also means the page works with no external network.
+// The live UNDP site uses ProximaNova (body) and SohneBreit (display). Both
+// are licensed and cannot ship here, so Mulish stands in — closest free match
+// for Proxima Nova's geometric-humanist proportions. If UNDP holds the
+// licences, drop the real woff2 files in and change these three lines.
 const FONTS = [
-  ["@fontsource/roboto/files/roboto-latin-400-normal.woff2", "Roboto", 400],
-  ["@fontsource/roboto/files/roboto-latin-500-normal.woff2", "Roboto", 500],
-  ["@fontsource/roboto/files/roboto-latin-700-normal.woff2", "Roboto", 700],
-  ["@fontsource/roboto-mono/files/roboto-mono-latin-400-normal.woff2", "Roboto Mono", 400],
+  ["@fontsource/mulish/files/mulish-latin-400-normal.woff2", "UNDP Sans", 400],
+  ["@fontsource/mulish/files/mulish-latin-600-normal.woff2", "UNDP Sans", 600],
+  ["@fontsource/mulish/files/mulish-latin-800-normal.woff2", "UNDP Sans", 800],
+  ["@fontsource/roboto-mono/files/roboto-mono-latin-400-normal.woff2", "UNDP Mono", 400],
 ];
 
 function emitFonts() {

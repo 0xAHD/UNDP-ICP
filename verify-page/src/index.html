@@ -10,17 +10,25 @@
 <link rel="stylesheet" href="./fonts.css">
 <style>
   :root{
-    --un-blue:#009edb; --un-blue-dark:#0072bc; --un-blue-soft:#b3e0f2;
-    --ink:#1a1a1a; --ink-soft:#4a4a4a; --muted:#767676; --rule:#d1d5db;
-    --paper:#ffffff; --paper-soft:#f5f7fa;
-    --success:#007749; --warning:#e5a70c; --danger:#cf1725;
+    /* Tokens read from the live UNDP Design System stylesheet on
+       innovation.eurasia.undp.org — not approximated. */
+    --brand:#006EB5; --brand-dark:#005691;
+    --ink:#232E3D;            /* gray-700, headings */
+    --ink-soft:#55606E;       /* gray-600 */
+    --muted:#677383;          /* gray-560 */
+    --rule:#D4D6D8;           /* gray-400 */
+    --paper:#ffffff; --paper-soft:#F7F7F7;  /* gray-200 */
+    --success:#59BA47;        /* green-600 */
+    --warning:#FBC412;        /* yellow-600 */
+    --danger:#D12800;         /* red-600 */
+    --accent-lime:#d0f54f;    /* the site's button fill — black text on it */
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Roboto',-apple-system,BlinkMacSystemFont,sans-serif;
+  body{font-family:'UNDP Sans','Helvetica Neue',Helvetica,Arial,sans-serif;
     color:var(--ink);background:var(--paper);font-size:15px;line-height:1.6}
 
   /* Header band */
-  .masthead{background:var(--un-blue);color:#fff}
+  .masthead{background:var(--brand);color:#fff}
   .masthead .inner{max-width:1080px;margin:0 auto;padding:18px 48px;
     display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
   .masthead .org{font-size:13px;font-weight:500;letter-spacing:.1em;text-transform:uppercase}
@@ -28,9 +36,10 @@
 
   .wrap{max-width:720px;margin:0 auto;padding:48px}
   .kicker{font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
-    color:var(--un-blue);margin-bottom:8px}
-  h1{font-size:32px;line-height:1.2;letter-spacing:-.01em;font-weight:700}
-  h2{font-size:24px;line-height:1.3;font-weight:500}
+    color:var(--brand);margin-bottom:8px}
+  h1{font-size:40px;line-height:1.1;letter-spacing:-.01em;font-weight:800;
+    text-transform:uppercase;text-wrap:balance;color:var(--ink)}
+  h2{font-size:22px;line-height:1.3;font-weight:700}
   .lede{color:var(--ink-soft);margin-top:12px;max-width:62ch}
   .band{margin-top:48px}
 
@@ -42,7 +51,7 @@
   .verdict{border:1px solid var(--rule);border-left:4px solid var(--rule);padding:24px;
     display:flex;gap:16px;align-items:flex-start}
   .verdict .dot{width:10px;height:10px;flex:0 0 10px;margin-top:8px;background:var(--muted)}
-  .verdict h2{font-size:20px}
+  .verdict h2{font-size:20px;text-transform:none}
   .verdict p{color:var(--ink-soft);margin-top:4px;font-size:14px}
   .v-ok{border-left-color:var(--success)}      .v-ok .dot{background:var(--success)}
   .v-ok h2{color:var(--success)}
@@ -55,9 +64,9 @@
   dl.detail{margin-top:24px;border-top:1px solid var(--rule)}
   dl.detail>div{display:grid;grid-template-columns:180px 1fr;gap:16px;
     padding:12px 0;border-bottom:1px solid var(--rule)}
-  dl.detail dt{color:var(--muted);font-size:13px}
+  dl.detail dt{color:var(--muted);font-size:13px;font-weight:600}
   dl.detail dd{font-size:14px;overflow-wrap:anywhere}
-  .mono{font-family:'Roboto Mono',ui-monospace,monospace;font-size:12px;color:var(--ink-soft)}
+  .mono{font-family:'UNDP Mono',ui-monospace,monospace;font-size:12px;color:var(--ink-soft)}
 
   .checks{list-style:none;margin-top:24px}
   .checks li{display:grid;grid-template-columns:20px 1fr;gap:12px;align-items:start;
@@ -70,23 +79,23 @@
 
   /* Input */
   .drop{border:1px dashed var(--rule);background:var(--paper-soft);padding:48px 24px;text-align:center}
-  .drop.over{border-color:var(--un-blue);background:#eef7fc}
-  .drop h2{font-size:18px;font-weight:500}
+  .drop.over{border-color:var(--brand);background:#eef7fc}
+  .drop h2{font-size:18px;font-weight:700;text-transform:none}
   .drop p{color:var(--muted);font-size:13px;margin-top:8px}
   .actions{margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
   button{border:none;padding:12px 24px;font-family:inherit;font-size:12px;font-weight:500;
     letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .15s}
-  .btn-primary{background:var(--un-blue);color:#fff}
-  .btn-primary:hover{background:var(--un-blue-dark)}
-  .btn-secondary{background:transparent;color:var(--un-blue);border:1px solid var(--un-blue)}
-  .btn-secondary:hover{background:var(--un-blue);color:#fff}
-  button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:2px solid var(--un-blue);outline-offset:2px}
+  .btn-primary{background:var(--accent-lime);color:#000}
+  .btn-primary:hover{background:#c2eb33}
+  .btn-secondary{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+  .btn-secondary:hover{background:var(--brand);color:#fff}
+  button:focus-visible,summary:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   details{margin-top:24px;text-align:left}
-  summary{cursor:pointer;color:var(--un-blue);font-size:13px;font-weight:500}
+  summary{cursor:pointer;color:var(--brand);font-size:13px;font-weight:500}
   label{display:block;font-weight:500;font-size:13px;margin:16px 0 8px}
   textarea{width:100%;min-height:140px;padding:12px;border:1px solid var(--rule);border-radius:2px;
-    background:var(--paper);color:var(--ink);font-family:'Roboto Mono',monospace;font-size:13px;resize:vertical}
-  textarea:focus{outline:2px solid var(--un-blue);outline-offset:0}
+    background:var(--paper);color:var(--ink);font-family:'UNDP Mono',monospace;font-size:13px;resize:vertical}
+  textarea:focus{outline:2px solid var(--brand);outline-offset:0}
 
   .waiting{color:var(--muted);font-size:14px;padding:32px 0;text-align:center}
   .note{margin-top:48px;padding-top:24px;border-top:1px solid var(--rule);
@@ -95,6 +104,7 @@
 
   @media(max-width:640px){
     .wrap{padding:32px 16px}
+    h1{font-size:28px}
     .masthead .inner{padding:16px}
     h1{font-size:26px}
     dl.detail>div{grid-template-columns:1fr;gap:4px}

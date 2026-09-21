@@ -361,10 +361,18 @@ store/                 off-chain participant store (PERSONAL DATA LIVES HERE,
                        never on chain) behind one interface: local /
                        sharepoint / google adapters
 verify-page/           public verification page (static-site canister).
-                       Follows the UNDP design system: UN Blue #009edb as the
-                       only accent, Roboto, kickers, no rounded corners, no
-                       shadows, no gradients, British English, status shown as
-                       a dot PLUS a text label (never colour alone).
+                       Styled from the REAL tokens in the live UNDP Design
+                       System stylesheet (innovation.eurasia.undp.org), not
+                       approximated: brand #006EB5, gray-700 #232E3D ink,
+                       gray-400 #D4D6D8 rules, green-600/red-600/yellow-600
+                       semantics, uppercase hero, lime #d0f54f primary button
+                       with black text. Square corners, no shadows, no
+                       gradients, British English, status shown as a dot PLUS
+                       a text label (never colour alone).
+                       FONTS: the live site uses ProximaNova + SohneBreit, both
+                       licensed. Mulish stands in. If UNDP holds the licences,
+                       drop the woff2 files in and change three lines in
+                       verify-page/build.mjs.
                        Fonts are SELF-HOSTED — a third-party font request would
                        tell that party someone opened a credential, which
                        contradicts the page's own claim.
