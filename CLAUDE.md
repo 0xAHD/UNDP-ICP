@@ -475,6 +475,28 @@ reentrancy exposure today. `lib/Signer.mo` changes that: `requireAdmin` →
 change across the await. Use the CallerGuard pattern from `canister-security`,
 and re-check authorisation *after* the await before committing state.
 
+## 11a. UNDP design system — use the repo copy
+
+Frontend work follows `.claude/skills/undp-design-system/SKILL.md`, which is
+**version-controlled in this repo on purpose**.
+
+The account-level copy of that skill is *synced* and gets overwritten, and its
+original values were wrong in ways that are not obvious by eye — brand
+`#009edb` instead of `#006EB5`, ink `#1a1a1a` instead of `#232E3D`, sentence-case
+headlines instead of uppercase, and a blue button with white text instead of a
+bright accent fill with black text. The repo copy carries values measured from
+the live stylesheet at innovation.eurasia.undp.org (21 September 2026) and wins
+for work here.
+
+If the synced copy is corrected upstream, reconcile and delete the repo copy
+rather than letting two versions drift.
+
+Fonts: the live site uses ProximaNova and SohneBreit, both licensed. Mulish
+stands in, aliased as `UNDP Sans`. **Self-host fonts, never Google Fonts** — a
+third-party font request reveals who visited the page.
+
+---
+
 ## 12. Environment notes
 
 - Toolchain: `icp` (never `dfx`), `mops`, `moc` pinned in `mops.toml`.
