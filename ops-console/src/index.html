@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Ops console — UNDP AltFinLab Cohort Tracker</title>
+<link rel="stylesheet" href="./fonts.css">
+<style>
+  :root{
+    --brand:#006EB5; --brand-dark:#005691;
+    --ink:#232E3D; --ink-soft:#55606E; --muted:#677383; --rule:#D4D6D8;
+    --paper:#ffffff; --paper-soft:#F7F7F7;
+    --success:#59BA47; --warning:#FBC412; --danger:#D12800;
+    --accent-lime:#d0f54f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'UNDP Sans','Helvetica Neue',Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--paper);font-size:15px;line-height:1.5}
+  .masthead{background:var(--brand);color:#fff}
+  .masthead .inner{max-width:1080px;margin:0 auto;padding:18px 48px;
+    display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  .masthead .org{font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+  .masthead .unit{font-size:13px;opacity:.9}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:48px}
+  .kicker{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--brand);margin-bottom:8px}
+  h1{font-size:40px;line-height:1.1;font-weight:800;text-transform:uppercase;
+    text-wrap:balance;letter-spacing:-.01em}
+  h2{font-size:22px;font-weight:700;line-height:1.3}
+  h3{font-size:16px;font-weight:700}
+  .lede{color:var(--ink-soft);margin-top:12px;max-width:70ch}
+
+  /* Identity bar */
+  .idbar{margin-top:32px;border:1px solid var(--rule);background:var(--paper-soft);
+    padding:20px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+  .idbar .who{flex:1 1 320px;min-width:0}
+  .idbar .label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .mono{font-family:'UNDP Mono',ui-monospace,monospace;font-size:12px;color:var(--ink-soft);
+    overflow-wrap:anywhere}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;
+    padding:4px 10px;border:1px solid var(--rule);background:var(--paper)}
+  .pill .dot{width:8px;height:8px;background:var(--muted)}
+  .pill.is-admin .dot{background:var(--success)} .pill.is-admin{color:var(--success)}
+  .pill.not-admin .dot{background:var(--danger)} .pill.not-admin{color:var(--danger)}
+
+  section.band{margin-top:48px}
+  section.band>header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+    padding-bottom:12px;border-bottom:2px solid var(--ink)}
+  .card{border:1px solid var(--rule);padding:24px;margin-top:24px}
+
+  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+  th{text-align:left;background:var(--paper-soft);font-weight:700;font-size:12px;
+    letter-spacing:.06em;text-transform:uppercase;padding:12px 16px;border-bottom:1px solid var(--rule)}
+  td{padding:12px 16px;border-bottom:1px solid var(--rule);vertical-align:top}
+  td.num{text-align:right;font-family:'UNDP Mono',monospace}
+  .status{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+  .status .dot{width:8px;height:8px}
+  .status.open .dot{background:var(--success)}   .status.open{color:var(--success)}
+  .status.closed .dot{background:var(--muted)}   .status.closed{color:var(--muted)}
+  .status.revoked .dot{background:var(--danger)} .status.revoked{color:var(--danger)}
+  .status.active .dot{background:var(--success)} .status.active{color:var(--success)}
+
+  label{display:block;font-weight:600;font-size:13px;margin:16px 0 6px}
+  input[type=text]{width:100%;padding:12px;border:1px solid var(--rule);border-radius:2px;
+    font-family:inherit;font-size:14px;color:var(--ink);background:var(--paper)}
+  input[type=text]:focus{outline:2px solid var(--brand);outline-offset:0}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:16px}
+  .row>div{flex:1 1 200px}
+
+  button{border:none;padding:12px 24px;font-family:inherit;font-size:12px;font-weight:600;
+    letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background .15s}
+  .btn-primary{background:var(--accent-lime);color:#000}
+  .btn-primary:hover:not(:disabled){background:#c2eb33}
+  .btn-secondary{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+  .btn-secondary:hover:not(:disabled){background:var(--brand);color:#fff}
+  .btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+  .btn-danger:hover:not(:disabled){background:var(--danger);color:#fff}
+  .btn-small{padding:8px 14px;font-size:11px}
+  /* Disabled reads as disabled rather than faded: opacity alone puts black
+     text on pale lime, which falls below the contrast floor. */
+  button:disabled{background:var(--paper-soft);color:var(--muted);
+    border:1px solid var(--rule);cursor:not-allowed}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+  .msg{margin-top:16px;padding:12px 16px;border-left:4px solid var(--rule);
+    background:var(--paper-soft);font-size:14px}
+  .msg.ok{border-left-color:var(--success)}
+  .msg.err{border-left-color:var(--danger);color:var(--danger)}
+  .empty{color:var(--muted);font-size:14px;padding:24px 0}
+  .hidden{display:none}
+  .note{margin-top:48px;padding-top:24px;border-top:1px solid var(--rule);
+    font-size:13px;color:var(--muted);max-width:80ch}
+
+  @media(max-width:720px){
+    .wrap{padding:32px 16px} .masthead .inner{padding:16px} h1{font-size:28px}
+    table,thead,tbody,th,td,tr{display:block}
+    thead{display:none}
+    td{border:0;padding:4px 0}
+    tr{border-bottom:1px solid var(--rule);padding:12px 0}
+  }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="inner">
+    <span class="org">United Nations Development Programme</span>
+    <span class="unit">AltFinLab — Cohort Tracker</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="kicker">Accelerator operations</p>
+  <h1>Ops console</h1>
+  <p class="lede">
+    Cohorts, completion rules and credential status. Actions are restricted to
+    registered administrators; the console shows what it can read either way.
+  </p>
+
+  <div class="idbar">
+    <div class="who">
+      <div class="label">Signed in as</div>
+      <div id="principal" class="mono">Not signed in</div>
+    </div>
+    <div id="adminState"></div>
+    <div>
+      <button id="signin" class="btn-primary">Sign in</button>
+      <button id="signout" class="btn-secondary hidden">Sign out</button>
+    </div>
+  </div>
+  <div id="authMsg"></div>
+
+  <section class="band">
+    <header><h2>Cohorts</h2><span class="kicker" style="margin:0">On chain</span></header>
+    <div id="cohorts"><p class="empty">Loading…</p></div>
+
+    <div class="card">
+      <h3>Open a cohort</h3>
+      <div class="row">
+        <div>
+          <label for="newCohort">Cohort identifier</label>
+          <input type="text" id="newCohort" placeholder="altfinlab-2026" autocomplete="off">
+          <p class="hint">Lowercase letters, digits and hyphens. Up to 32 characters.</p>
+        </div>
+        <div style="flex:0 0 auto">
+          <button id="openCohort" class="btn-primary" disabled>Open cohort</button>
+        </div>
+      </div>
+      <div id="cohortMsg"></div>
+    </div>
+
+    <div class="card">
+      <h3>Set a completion rule</h3>
+      <p class="hint">Rules may only be set while a cohort is open. Closing a cohort freezes them permanently.</p>
+      <div class="row">
+        <div>
+          <label for="ruleCohort">Cohort</label>
+          <input type="text" id="ruleCohort" placeholder="altfinlab-2026" autocomplete="off">
+        </div>
+        <div>
+          <label for="ruleRole">Role</label>
+          <input type="text" id="ruleRole" placeholder="founder" autocomplete="off">
+        </div>
+      </div>
+      <label for="ruleMilestones">Required milestones</label>
+      <input type="text" id="ruleMilestones" placeholder="pitch-training, demo-day" autocomplete="off">
+      <p class="hint">Comma separated. Each must be a valid identifier.</p>
+      <div class="row"><div style="flex:0 0 auto">
+        <button id="setRule" class="btn-primary" disabled>Set rule</button>
+      </div></div>
+      <div id="ruleMsg"></div>
+    </div>
+  </section>
+
+  <section class="band">
+    <header><h2>Credentials</h2><span class="kicker" style="margin:0">On chain</span></header>
+    <div class="card">
+      <h3>Look up by digest</h3>
+      <div class="row">
+        <div>
+          <label for="digest">Credential digest</label>
+          <input type="text" id="digest" placeholder="64 hexadecimal characters" autocomplete="off">
+        </div>
+        <div style="flex:0 0 auto">
+          <button id="lookup" class="btn-secondary">Look up</button>
+        </div>
+      </div>
+      <div id="credResult"></div>
+    </div>
+    <div class="card">
+      <h3>Issuer keys</h3>
+      <p class="hint">Append-only. Keys are added with the issuer tool, which holds the private key.</p>
+      <div id="issuerKeys"><p class="empty">Loading…</p></div>
+    </div>
+  </section>
+
+  <p class="note">
+    Issuing a credential is deliberately not possible from this console. It requires
+    the issuer private key, which is held off chain by the issuer tool and never
+    reaches a browser. Revocation needs no key and is available here.
+  </p>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

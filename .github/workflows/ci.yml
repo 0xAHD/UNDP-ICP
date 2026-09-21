@@ -55,7 +55,7 @@ jobs:
           fi
 
   # The real gate: a local replica, both canisters, the credential flow with a
-  # real Ed25519 key, and the verification page in a real browser.
+  # real Ed25519 key, and both front ends in a real browser.
   integration:
     name: local replica gate
     runs-on: ubuntu-latest
@@ -76,13 +76,14 @@ jobs:
           mops install
           npm ci || npm install
           npm --prefix verify-page ci || npm --prefix verify-page install
+          npm --prefix ops-console ci || npm --prefix ops-console install
 
-      # page-test.mjs falls back to playwright's own Chromium when no
+      # The browser suites fall back to playwright's own Chromium when no
       # pre-staged binary is present, which is the case on a runner.
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      # Runs reset -> adversarial suites -> credential flow -> page suite.
+      # Runs reset -> adversarial suites -> credential flow -> browser suites.
       - name: Full gate
         run: ./scripts/dev.sh test
 

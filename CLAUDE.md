@@ -313,6 +313,15 @@ output**. Never claim a build or test passed without having run it this session.
   confirmed. Credential links put the document in the URL **fragment**, which
   browsers never send to a server — keep it that way; a query param would leak
   the holder's name to the gateway.
+- the ops console driven in a real browser, **signed out**
+  (`scripts/console-test.mjs`) — **done 2026-09-21**: 22 cases covering what an
+  unauthenticated visitor sees, that no privileged control is offered, that the
+  canister data renders, and that the page fetches nothing off the replica.
+  The **Internet Identity sign-in ceremony itself is NOT covered** — it needs a
+  real identity provider and a human. That is acceptable only because the
+  console is not a security boundary: the authorisation that matters is in the
+  canisters and is covered by the adversarial suites. Do not let a future
+  change move an authorisation decision into the page.
 
 Spike results that change the gate (`spikes/FINDINGS.md`): the certified-query
 path verifies end to end locally, and **certified data survives a canister
@@ -325,8 +334,9 @@ still missing.
 `./scripts/dev.sh test` runs reset + the governance suites on both canisters
 (34 each) + ops cohorts and completion rules (28) + the off-chain store and
 eligibility (16) + the end-to-end credential flow (28) + the verification page
-in a real browser (14) — **154 in total**. The page is in the gate deliberately: it
-is the product surface, so a break there matters as much as a canister break.
+in a real browser (14) + the signed-out ops console in a real browser (22) —
+**176 in total**. Both pages are in the gate deliberately: they are the product
+surface, so a break there matters as much as a canister break.
 
 **CI** (`.github/workflows/ci.yml`) runs the same thing on every push: a fast
 `check` job (mops check/build + a Candid-staleness check that fails if source
@@ -376,7 +386,22 @@ verify-page/           public verification page (static-site canister).
                        Fonts are SELF-HOSTED — a third-party font request would
                        tell that party someone opened a credential, which
                        contradicts the page's own claim.
-scripts/               dev loop, adversarial suite, issuer tool, page driver
+ops-console/           internal ops console (static-site canister). Same UNDP
+                       tokens and self-hosted fonts as verify-page. Admin
+                       actions sign in with INTERNET IDENTITY
+                       (`@icp-sdk/auth`), but the console only decides what to
+                       SHOW — every mutating call is authorised in the
+                       canister. NO ISSUING here: issuing needs the issuer
+                       private key, which is held off chain by the issuer tool
+                       and must never reach a browser. Revocation needs no key,
+                       so it is here.
+                       `ops` and `registry` hold SEPARATE admin sets, so the
+                       console checks `callerIsAdmin` on each.
+                       Mainnet II is the default and works against a local
+                       replica, so there is no environment branching; the root
+                       key and canister ids come from the `ic_env` cookie the
+                       asset canister sets — never `fetchRootKey()`.
+scripts/               dev loop, adversarial suite, issuer tool, page drivers
 ```
 
 Rules that bite:

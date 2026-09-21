@@ -4,7 +4,7 @@
 #   ./scripts/dev.sh reset    wipe local state, fresh install (schema changes)
 #   ./scripts/dev.sh seed     bootstrap admins up to the floor
 #   ./scripts/dev.sh up       upgrade in place, keeping state (compatible changes)
-#   ./scripts/dev.sh test     reset, adversarial suites, credential flow, page suite
+#   ./scripts/dev.sh test     reset, adversarial suites, credential flow, browser suites
 #   ./scripts/dev.sh status   canister IDs, schema versions, admin counts
 #   ./scripts/dev.sh down     stop the local network
 #
@@ -137,6 +137,11 @@ cmd_test() {
   # canister break, so it is part of the gate rather than a manual check.
   hr; echo "==> VERIFICATION PAGE (real browser)"
   node ./scripts/page-test.mjs || fail=1
+  # The ops console, signed out. The sign-in ceremony needs a real identity
+  # provider and is not exercised here; the authorisation that matters is in
+  # the canisters and is covered by the adversarial suites above.
+  hr; echo "==> OPS CONSOLE, SIGNED OUT (real browser)"
+  node ./scripts/console-test.mjs || fail=1
   hr
   [[ $fail -eq 0 ]] && echo "ALL SUITES PASSED" || { echo "SUITE FAILURES"; return 1; }
 }

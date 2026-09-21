@@ -27,6 +27,20 @@ canisters:
           - npm --prefix verify-page install
           - npm --prefix verify-page run build
 
+  # Internal ops console: cohorts, completion rules, credential status.
+  # Admin actions authenticate with Internet Identity, but the canisters do the
+  # real authorisation — this page only decides what to SHOW. Issuing is
+  # deliberately absent: it needs the issuer private key, which is held off
+  # chain and must never reach a browser.
+  - name: ops_console
+    recipe:
+      type: "@dfinity/static-site@v0.3.3"
+      configuration:
+        dir: ops-console/dist
+        build:
+          - npm --prefix ops-console install
+          - npm --prefix ops-console run build
+
 networks:
   - name: local
     mode: managed
@@ -34,4 +48,4 @@ networks:
 environments:
   - name: local
     network: local
-    canisters: [ops, registry, verify_page]
+    canisters: [ops, registry, verify_page, ops_console]
